@@ -1,3 +1,170 @@
 <resources>
     <string name="app_name">Expensify</string>
+
+    <!-- Common -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_saving">Saving…</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_back">Back</string>
+    <string name="action_close">Close</string>
+    <string name="action_more">More actions</string>
+    <string name="action_retry">Try again</string>
+    <string name="coming_soon_title">Coming soon</string>
+    <string name="coming_soon_message">This part of the app is on its way.</string>
+    <string name="something_went_wrong">Something went wrong</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_accounts">Accounts</string>
+    <string name="nav_budgets">Budgets</string>
+    <string name="nav_more">More</string>
+    <string name="more_reports">Reports</string>
+    <string name="more_recurring">Recurring</string>
+    <string name="more_categories">Categories</string>
+    <string name="more_settings">Settings</string>
+    <string name="more_log_out">Log out</string>
+    <string name="more_version">Version %1$s</string>
+
+    <!-- Login -->
+    <string name="login_title">Log in</string>
+    <string name="login_subtitle">Welcome back. Your money is where you left it.</string>
+    <string name="login_username_or_email">Username or email</string>
+    <string name="login_password">Password</string>
+    <string name="login_show_password">Show password</string>
+    <string name="login_hide_password">Hide password</string>
+    <string name="login_submit">Log in</string>
+    <string name="login_submitting">Logging in…</string>
+    <string name="login_enter_username">Enter your username or email</string>
+    <string name="login_enter_password">Enter your password</string>
+
+    <!-- Home -->
+    <string name="home_greeting_morning">Good morning, %1$s</string>
+    <string name="home_greeting_afternoon">Good afternoon, %1$s</string>
+    <string name="home_greeting_evening">Good evening, %1$s</string>
+    <string name="home_empty_title">Nothing logged yet</string>
+    <string name="home_empty_message">Add the places your money sits, then log your first entry. Income, spending and budgets will show up here.</string>
+    <string name="home_empty_action">Set up accounts</string>
+
+    <!-- Accounts -->
+    <string name="accounts_title">Accounts</string>
+    <string name="accounts_add">Add account</string>
+    <string name="accounts_total_balance">Total balance</string>
+    <plurals name="accounts_total_across">
+        <item quantity="one">Across %1$d account</item>
+        <item quantity="other">Across %1$d accounts</item>
+    </plurals>
+    <string name="accounts_total_excluded">%1$s · %2$d not included</string>
+    <string name="accounts_archived_section">Archived (%1$d)</string>
+    <string name="accounts_empty_title">No accounts yet</string>
+    <string name="accounts_empty_message">Add the places your money sits: cash, a bank account, a card or a mobile wallet.</string>
+    <string name="accounts_all_archived_title">All your accounts are archived</string>
+    <string name="accounts_all_archived_message">Restore one from the archived list, or add a new account.</string>
+    <string name="account_actions_for">Actions for %1$s</string>
+    <string name="account_reconcile">Reconcile</string>
+    <string name="account_archive">Archive</string>
+    <string name="account_restore">Restore</string>
+    <string name="account_chip_archived">Archived</string>
+    <string name="account_chip_not_in_total">Not in total</string>
+    <string name="account_credit_used">Credit used</string>
+    <string name="account_credit_used_of">%1$d%% of %2$s limit used</string>
+    <string name="account_credit_percent_used">%1$d%% used</string>
+
+    <string name="account_type_cash">Cash</string>
+    <string name="account_type_bank">Bank</string>
+    <string name="account_type_credit_card">Credit card</string>
+    <string name="account_type_wallet">Mobile wallet</string>
+    <string name="account_type_savings">Savings</string>
+    <string name="account_type_loan">Loan</string>
+    <string name="account_type_other">Other</string>
+
+    <string name="balance_caption_balance">Balance</string>
+    <string name="balance_caption_owed">Owed</string>
+    <string name="balance_caption_in_credit">In credit</string>
+    <string name="balance_caption_current">Current balance</string>
+    <string name="balance_caption_amount_owed">Amount owed</string>
+    <string name="balance_caption_opening">Opening balance</string>
+    <string name="balance_caption_opening_owed">Opening amount owed</string>
+    <string name="balance_caption_credit_limit">Credit limit</string>
+
+    <!-- Account page -->
+    <string name="account_not_found_title">Account not found</string>
+    <string name="account_not_found_message">It may have been deleted, perhaps on another device.</string>
+    <string name="account_back_to_accounts">Back to accounts</string>
+    <string name="account_archived_notice">This account is archived, so it\'s hidden from pickers, the dashboard and your total balance. Restore it to use it again.</string>
+    <string name="account_transactions_title">Transactions</string>
+    <plurals name="transactions_count">
+        <item quantity="one">%1$d transaction</item>
+        <item quantity="other">%1$d transactions</item>
+    </plurals>
+    <string name="account_transactions_empty_title">No transactions yet</string>
+    <string name="account_transactions_empty_message">Entries on this account show up here, newest first.</string>
+
+    <!-- Account form -->
+    <string name="account_form_add_title">Add account</string>
+    <string name="account_form_edit_title">Edit account</string>
+    <string name="account_form_name">Name</string>
+    <string name="account_form_name_placeholder">e.g. Wallet, Everyday bank</string>
+    <string name="account_form_type">Type</string>
+    <string name="account_form_opening_balance">Opening balance</string>
+    <string name="account_form_amount_owed">Amount owed</string>
+    <string name="account_form_opening_amount_owed">Opening amount owed</string>
+    <string name="account_form_balance_hint_new">What\'s in the account today.</string>
+    <string name="account_form_balance_hint_liability">What you owe today.</string>
+    <string name="account_form_balance_hint_edit">Changing it moves the current balance by the same amount.</string>
+    <string name="account_form_credit_limit">Credit limit</string>
+    <string name="account_form_credit_limit_hint">Optional. Shows how much of it you\'ve used.</string>
+    <string name="account_form_include_in_total">Include in total balance</string>
+    <string name="account_form_submit_add">Add account</string>
+    <string name="account_form_error_name_required">Name is required</string>
+    <string name="account_form_error_name_long">Use at most 40 characters</string>
+    <string name="account_form_error_amount">Enter an amount</string>
+    <string name="account_form_error_positive">Must be more than 0</string>
+    <string name="account_added">Account added · %1$s</string>
+    <string name="account_updated">Account updated · %1$s</string>
+
+    <!-- Reconcile -->
+    <string name="reconcile_title">Reconcile %1$s</string>
+    <string name="reconcile_intro">Enter what your bank, card or wallet shows right now. The difference is saved as a balance adjustment, which reports and budgets leave out.</string>
+    <string name="reconcile_actual_balance">Actual balance</string>
+    <string name="reconcile_actual_owed">Actual amount owed</string>
+    <string name="reconcile_in_app">In the app</string>
+    <string name="reconcile_in_app_owed">%1$s owed</string>
+    <string name="reconcile_in_app_in_credit">%1$s in credit</string>
+    <string name="reconcile_adjustment">Adjustment</string>
+    <string name="reconcile_adjustment_none">None, it already matches</string>
+    <string name="reconcile_already_matches">Already matches · %1$s needed no adjustment</string>
+    <string name="reconcile_adjusted">Balance adjusted · %1$s</string>
+
+    <!-- Archive / restore / delete -->
+    <string name="archive_dialog_title">Archive %1$s?</string>
+    <string name="archive_dialog_message">Its balance isn\'t zero (%1$s). Archiving hides it from pickers, the dashboard and your total balance. Its history stays, and you can restore it anytime.</string>
+    <string name="archive_dialog_balance_owed">%1$s owed</string>
+    <string name="account_archived">Account archived · %1$s</string>
+    <string name="account_restored">Account restored · %1$s</string>
+    <string name="delete_dialog_title">Delete %1$s?</string>
+    <string name="delete_dialog_message">This can\'t be undone. Archive it instead if you want to keep its history.</string>
+    <string name="delete_dialog_confirm">Delete account</string>
+    <string name="account_deleted">Account deleted · %1$s</string>
+    <string name="could_not_archive">Could not archive account · %1$s</string>
+    <string name="could_not_restore">Could not restore account · %1$s</string>
+    <string name="could_not_delete">Could not delete account · %1$s</string>
+    <string name="could_not_reconcile">Could not reconcile · %1$s</string>
+
+    <!-- Transactions rows -->
+    <string name="tx_deleted_account">Deleted account</string>
+    <string name="tx_deleted_category">Deleted category</string>
+    <string name="tx_type_expense">Expense</string>
+    <string name="tx_type_income">Income</string>
+    <string name="tx_type_transfer">Transfer</string>
+    <string name="tx_upcoming">Upcoming</string>
+    <string name="tx_transfer_arrow">%1$s → %2$s</string>
+    <string name="tx_subtitle_with_category">%1$s · %2$s</string>
+    <string name="day_today">Today</string>
+    <string name="day_yesterday">Yesterday</string>
+    <string name="day_tomorrow">Tomorrow</string>
+    <string name="day_near_label">%1$s · %2$s</string>
+    <string name="day_net">Net</string>
 </resources>

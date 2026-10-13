@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Firebase is HTTPS only. The debug source set overrides this file to allow
+     plain HTTP to the emulators on the host machine. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug only. Android 17 (API 37) blocks apps that target SDK 37 from local
+     network addresses unless they hold this runtime permission, and the Firebase
+     emulators live at 10.0.2.2 as the Android emulator sees the host machine.
+     MainActivity asks for it once when USE_EMULATORS is on; or grant it from a
+     terminal: adb shell pm grant com.example.expensify android.permission.ACCESS_LOCAL_NETWORK
+     Release builds talk to Firebase on the internet and never need it. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+</manifest>

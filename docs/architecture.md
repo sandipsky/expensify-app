@@ -492,6 +492,8 @@ flowchart TB
 | WorkManager runs on a dead battery-saver schedule or not at all on some OEMs | The foreground runner still catches up on open, as the web does; workers are a bonus, never the only path |
 | App Check with Play Integrity needs Google Play on the device | Off until production; enforcement is a console switch shared with the web |
 | A custom OEM font is wider or taller than Roboto, lacks a weight, or ignores `tnum` | Weights limited to 400/500/700; no fixed-height text; amounts right-aligned and columns content-sized; test on a themed Samsung/Xiaomi device, not only the stock AVD |
+| Android 17 Local Network Protection drops the app's connections to the emulators at `10.0.2.2` (SYN never answered) | Debug-only `ACCESS_LOCAL_NETWORK` in `src/debug/AndroidManifest.xml`, requested at launch when `USE_EMULATORS` is on, or granted with `adb shell pm grant`; release never needs it |
+| Library Kotlin metadata newer than the compiler (BOM 35's `firebase-auth` is built with Kotlin 2.4) fails the whole compile | Pin Firebase BOM 34.x until Kotlin is bumped; use the Java entry points for Auth and Firestore instances |
 
 ## 15. Delivery
 

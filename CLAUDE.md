@@ -41,10 +41,15 @@ one change) and deployed with `npm run deploy:rules` there, then used here. Neve
 
 ## State of the repo (October 2026)
 
-Android Studio's empty Compose template plus `icon.png` (512 px launcher art, violet receipt).
-`MainActivity` shows "Hello Android"; `ui/theme/` is the purple template with dynamic color on;
-`res/values/colors.xml` holds template purples. Nothing from the spec is built yet. Replace the
-template theme and colors rather than extending them.
+Phase 0 and the first slice of phases 1–2 are built and verified on the `Pixel_10` AVD against
+the emulators: the design system (`designsystem/`), the navigation shell with the bottom bar,
+Hilt and Firebase wiring, `core/` (Money, Periods, Today, AppError, UiText, Messages) with unit
+tests, **Login** (no signup yet), an empty **Home**, and the full **Accounts** feature: list with
+total and archived section, add/edit form, account page with its entries grouped by day,
+reconcile sheet, archive/restore, delete. Transactions and categories have read-only
+repositories for the account page; their screens, Budgets, Reports, Recurring and Settings
+are placeholders. `icon.png` (512 px, violet receipt) is still only the source art for a
+launcher icon.
 
 Open decision to settle before registering the app in Firebase: the `applicationId` is still
 `com.example.expensify`. It is baked into `google-services.json` and permanent on Play, so pick
@@ -61,6 +66,9 @@ the real one first (namespace and packages follow it).
 | SDK | minSdk 24, target/compile 37 | Installed locally: platform `android-37`, build-tools 36.0.0 |
 | Java target | 11 | |
 | Release | `optimization { enable = false }` | Turn R8 on before any release; keep rules go in `app/src/main/keepRules/` (AGP 9 location), not `proguard-rules.pro` |
+| KSP on AGP 9 | `android.disallowKotlinSourceSets=false` in `gradle.properties` | KSP 2.2.10-2.0.2 still registers its generated sources through `kotlin.sourceSets`, which built-in Kotlin forbids; the flag is the documented escape hatch. Remove it once a KSP release stops needing it |
+| Firebase BOM | **34.x** (34.19.0), not 35 | BOM 35's `firebase-auth` 25.0.0 ships Kotlin 2.4 metadata, which the 2.2.10 compiler refuses as a hard error whenever the jar is on the classpath. Bump the BOM only together with Kotlin ≥ 2.4 (and KSP, Compose and serialization plugins) |
+| Firebase entry points | `FirebaseAuth.getInstance()`, `FirebaseFirestore.getInstance()` | The Java API; `Firebase.auth` is one of the Kotlin extensions in that jar. `Query.snapshots()` from `firebase-firestore` is fine |
 
 Every dependency goes through `gradle/libs.versions.toml`; never a literal coordinate in
 `app/build.gradle.kts`. Use the Firebase BOM and the Compose BOM; pin everything else.
@@ -180,7 +188,17 @@ The full model is requirements §8/§9. These are the places an Android port goe
   `10.0.2.2` only. Release never points at emulators.
 - Sign-up on the emulators gives a user with the 25 default categories and no accounts; the
   web app at http://localhost:5173 against the same emulators shows the same data, which is the
-  quickest cross-client check.
+  quickest cross-client check. Without the web app, `python tools/seed_emulator.py` creates
+  `sita.r` / `password123` with four accounts, four categories and six entries.
+- **Android 17 (API 37) Local Network Protection.** Apps targeting SDK 37 can't reach local
+  addresses, `10.0.2.2` included, without the runtime permission
+  `android.permission.ACCESS_LOCAL_NETWORK`; connections just sit in `SYN_SENT` and Firestore
+  reports "Backend didn't respond within 10 seconds". `src/debug/AndroidManifest.xml` declares
+  it and `MainActivity` asks for it once when `USE_EMULATORS` is on; for scripted runs grant it
+  with `adb shell pm grant com.example.expensify android.permission.ACCESS_LOCAL_NETWORK`. Release
+  builds never need it. `adb shell` is exempt, so `nc` from the shell proves nothing about the app.
+- No `google-services.json` yet: `ExpensifyApp` initialises Firebase by hand for the demo project
+  in debug builds, and there is no Firebase config for release until the app is registered.
 
 ## Design system
 

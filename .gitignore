@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase config for a real project; register the app in the console and keep the file local.
+/app/google-services.json
