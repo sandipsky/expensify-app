@@ -34,6 +34,11 @@ import com.example.expensify.designsystem.icons.AppIcons
 import com.example.expensify.feature.accounts.ui.AccountDetailRoute
 import com.example.expensify.feature.accounts.ui.AccountFormRoute
 import com.example.expensify.feature.accounts.ui.AccountsRoute
+import com.example.expensify.feature.budgets.ui.BudgetDetailRoute
+import com.example.expensify.feature.budgets.ui.BudgetFormRoute
+import com.example.expensify.feature.budgets.ui.BudgetsRoute
+import com.example.expensify.feature.categories.ui.CategoriesRoute
+import com.example.expensify.feature.categories.ui.CategoryFormRoute
 import com.example.expensify.feature.dashboard.ui.HomeRoute
 import com.example.expensify.feature.settings.ui.MoreRoute
 import kotlin.reflect.KClass
@@ -110,9 +115,15 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
                 )
             }
             composable<Routes.Budgets> {
-                ComingSoonScreen(stringResource(R.string.nav_budgets), AppIcons.Budgets)
+                BudgetsRoute(
+                    onOpenBudget = { navController.navigate(Routes.BudgetDetail(it)) },
+                    onAddBudget = { navController.navigate(Routes.BudgetForm()) },
+                    onEditBudget = { navController.navigate(Routes.BudgetForm(it)) },
+                )
             }
-            composable<Routes.More> { MoreRoute() }
+            composable<Routes.More> {
+                MoreRoute(onOpenCategories = { navController.navigate(Routes.Categories) })
+            }
             composable<Routes.AccountDetail> {
                 AccountDetailRoute(
                     onBack = { navController.popBackStack() },
@@ -121,6 +132,25 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
             }
             composable<Routes.AccountForm> {
                 AccountFormRoute(onDone = { navController.popBackStack() })
+            }
+            composable<Routes.Categories> {
+                CategoriesRoute(
+                    onBack = { navController.popBackStack() },
+                    onAdd = { navController.navigate(Routes.CategoryForm(type = it.stored)) },
+                    onEdit = { navController.navigate(Routes.CategoryForm(type = it.type.stored, id = it.id)) },
+                )
+            }
+            composable<Routes.CategoryForm> {
+                CategoryFormRoute(onDone = { navController.popBackStack() })
+            }
+            composable<Routes.BudgetDetail> {
+                BudgetDetailRoute(
+                    onBack = { navController.popBackStack() },
+                    onEdit = { navController.navigate(Routes.BudgetForm(it)) },
+                )
+            }
+            composable<Routes.BudgetForm> {
+                BudgetFormRoute(onDone = { navController.popBackStack() })
             }
         }
     }

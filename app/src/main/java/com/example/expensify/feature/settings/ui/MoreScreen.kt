@@ -1,5 +1,6 @@
 package com.example.expensify.feature.settings.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,16 +68,21 @@ class MoreViewModel @Inject constructor(
 }
 
 @Composable
-fun MoreRoute(viewModel: MoreViewModel = hiltViewModel()) {
+fun MoreRoute(onOpenCategories: () -> Unit, viewModel: MoreViewModel = hiltViewModel()) {
     val session by viewModel.session.collectAsStateWithLifecycle()
     val signedIn = session as? Session.SignedIn
-    MoreScreen(name = signedIn?.name.orEmpty(), email = signedIn?.email.orEmpty(), onLogout = viewModel::logout)
+    MoreScreen(
+        name = signedIn?.name.orEmpty(),
+        email = signedIn?.email.orEmpty(),
+        onOpenCategories = onOpenCategories,
+        onLogout = viewModel::logout,
+    )
 }
 
-/** The rest of the sidebar: who is logged in, the sections still to come, and Log out. */
+/** The rest of the sidebar: who is logged in, Categories, the sections still to come, and Log out. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoreScreen(name: String, email: String, onLogout: () -> Unit) {
+fun MoreScreen(name: String, email: String, onOpenCategories: () -> Unit, onLogout: () -> Unit) {
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         containerColor = MaterialTheme.colorScheme.background,
@@ -125,7 +131,7 @@ fun MoreScreen(name: String, email: String, onLogout: () -> Unit) {
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 MoreItem(AppIcons.Recurring, R.string.more_recurring)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                MoreItem(AppIcons.Categories, R.string.more_categories)
+                MoreItem(AppIcons.Categories, R.string.more_categories, onClick = onOpenCategories)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 MoreItem(AppIcons.Settings, R.string.more_settings)
             }
@@ -146,22 +152,28 @@ fun MoreScreen(name: String, email: String, onLogout: () -> Unit) {
     }
 }
 
+/** A row to a section; without `onClick` it only says the section is still to come. */
 @Composable
-private fun MoreItem(icon: ImageVector, labelRes: Int) {
+private fun MoreItem(icon: ImageVector, labelRes: Int, onClick: (() -> Unit)? = null) {
     Row(
         Modifier
             .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(16.dp))
         Text(stringResource(labelRes), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(
-            stringResource(R.string.coming_soon_title),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (onClick == null) {
+            Text(
+                stringResource(R.string.coming_soon_title),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Icon(AppIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -171,5 +183,5 @@ private fun initialsOf(name: String): String =
 @PreviewLightDark
 @Composable
 private fun MorePreview() {
-    ExpensifyTheme { MoreScreen(name = "Sita Rai", email = "sita@example.com", onLogout = {}) }
+    ExpensifyTheme { MoreScreen(name = "Sita Rai", email = "sita@example.com", onOpenCategories = {}, onLogout = {}) }
 }

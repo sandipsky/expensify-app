@@ -9,24 +9,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import com.example.expensify.core.ui.Messages
 import com.example.expensify.core.ui.UiText
 import com.example.expensify.designsystem.components.LoadingScreen
 import com.example.expensify.feature.auth.data.Session
 import com.example.expensify.feature.auth.data.SessionRepository
 import com.example.expensify.feature.auth.ui.LoginRoute
+import com.example.expensify.feature.budgets.alerts.BudgetAlertsObserver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class AppViewModel @Inject constructor(
     session: SessionRepository,
     messages: Messages,
+    budgetAlerts: BudgetAlertsObserver,
 ) : ViewModel() {
     val session: StateFlow<Session> = session.session
     val messages: SharedFlow<UiText> = messages.messages
+
+    init {
+        // The app-scoped observers (architecture §9) run while the shell is alive; each does nothing while logged out.
+        viewModelScope.launch { budgetAlerts.run() }
+    }
 }
 
 /**

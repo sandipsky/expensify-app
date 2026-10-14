@@ -167,4 +167,145 @@
     <string name="day_tomorrow">Tomorrow</string>
     <string name="day_near_label">%1$s · %2$s</string>
     <string name="day_net">Net</string>
+
+    <!-- Categories -->
+    <string name="categories_title">Categories</string>
+    <string name="categories_add">Add category</string>
+    <string name="categories_add_defaults">Add default categories</string>
+    <string name="categories_empty_title">No categories yet</string>
+    <string name="categories_empty_message">Start with the usual ones, such as Groceries, Transport and Salary, and change them anytime. Or build your own list.</string>
+    <string name="categories_empty_expense_title">No expense categories</string>
+    <string name="categories_empty_income_title">No income categories</string>
+    <string name="categories_type_empty_message">Add one to sort these entries your way.</string>
+    <string name="categories_archived_section">Archived (%1$d)</string>
+    <string name="categories_archived_note">Hidden from pickers. Entries that use them keep them.</string>
+    <string name="category_type_expense">Expense</string>
+    <string name="category_type_income">Income</string>
+    <string name="category_actions_for">Actions for %1$s</string>
+    <string name="category_archive">Archive</string>
+    <string name="category_restore">Restore</string>
+    <string name="category_archived">Category archived · %1$s is hidden from pickers</string>
+    <string name="category_restored">Category restored · %1$s</string>
+    <string name="category_deleted">Category deleted · %1$s</string>
+    <string name="category_delete_dialog_title">Delete %1$s?</string>
+    <string name="category_delete_dialog_message">This can\'t be undone. Archive it instead if you\'d rather hide it from pickers and keep it.</string>
+    <string name="category_delete_dialog_confirm">Delete category</string>
+    <string name="could_not_archive_category">Could not archive category · %1$s</string>
+    <string name="could_not_restore_category">Could not restore category · %1$s</string>
+    <string name="could_not_delete_category">Could not delete category · %1$s</string>
+    <string name="could_not_add_defaults">Could not add default categories · %1$s</string>
+    <string name="defaults_added">Default categories added · Rename them, pick other icons or archive the ones you don\'t need.</string>
+    <string name="defaults_nothing_to_add">Nothing to add · You already have every default category.</string>
+
+    <!-- Category form -->
+    <string name="category_form_add_title">Add category</string>
+    <string name="category_form_edit_title">Edit category</string>
+    <string name="category_form_name">Name</string>
+    <string name="category_form_name_placeholder_expense">e.g. Coffee, Car repairs</string>
+    <string name="category_form_name_placeholder_income">e.g. Side job, Pension</string>
+    <string name="category_form_icon">Icon</string>
+    <string name="category_form_submit_add">Add category</string>
+    <string name="category_form_error_name_required">Name is required</string>
+    <string name="category_form_error_name_long">Use at most 30 characters</string>
+    <string name="category_form_error_name_taken_expense">You already have an expense category with this name.</string>
+    <string name="category_form_error_name_taken_income">You already have an income category with this name.</string>
+    <string name="category_added">Category added · %1$s</string>
+    <string name="category_updated">Category updated · %1$s</string>
+
+    <!-- Budgets -->
+    <string name="budgets_title">Budgets</string>
+    <string name="budgets_add">Add budget</string>
+    <string name="budgets_empty_title">No budgets yet</string>
+    <string name="budgets_empty_message">Set a limit for all your spending, or for categories such as Food or Transport, and see what\'s safe to spend each day.</string>
+    <string name="budgets_all_paused_title">All your budgets are paused</string>
+    <string name="budgets_all_paused_message">Resume one from the paused list, or add a new budget.</string>
+    <string name="budgets_paused_section">Paused (%1$d)</string>
+    <string name="budget_actions_for">Actions for %1$s</string>
+    <string name="budget_pause">Pause</string>
+    <string name="budget_resume">Resume</string>
+    <string name="budget_chip_paused">Paused</string>
+    <string name="budget_chip_rolls_over">Rolls over</string>
+    <string name="budget_chip_no_alerts">No alerts</string>
+    <string name="budget_chip_this_period">This period</string>
+    <string name="budget_period_weekly">Weekly</string>
+    <string name="budget_period_monthly">Monthly</string>
+    <string name="budget_period_yearly">Yearly</string>
+    <string name="budget_per_week">%1$s a week</string>
+    <string name="budget_per_month">%1$s a month</string>
+    <string name="budget_per_year">%1$s a year</string>
+    <string name="budget_previous_week">last week</string>
+    <string name="budget_previous_month">last month</string>
+    <string name="budget_previous_year">last year</string>
+    <string name="budget_state_on_track">On track</string>
+    <string name="budget_state_warning">Warning</string>
+    <string name="budget_state_over">Over</string>
+    <string name="budget_days_left">%1$d days left</string>
+    <string name="budget_last_day">Last day</string>
+    <string name="budget_ended">Ended</string>
+    <string name="budget_percent">%1$d%%</string>
+    <string name="budget_percent_none">—</string>
+    <string name="budget_spent_of">of %1$s</string>
+    <string name="budget_remaining_left">%1$s left</string>
+    <string name="budget_remaining_over">%1$s over</string>
+    <string name="budget_per_day_none">Nothing left to spend</string>
+    <string name="budget_per_day_today">%1$s to spend today</string>
+    <string name="budget_per_day">%1$s a day to spend</string>
+    <string name="budget_carry_in">Includes %1$s left over from %2$s</string>
+    <string name="budget_carry_out">%1$s overspent %2$s comes off this limit</string>
+    <string name="budget_meter_label">%1$s budget used</string>
+    <string name="budget_period_and_days">%1$s · %2$s</string>
+    <string name="budget_card_caption">%1$s · %2$s</string>
+    <string name="budget_scope_all">All expenses</string>
+    <string name="budget_scope_deleted">Deleted categories</string>
+    <string name="budget_paused">Budget paused · %1$s</string>
+    <string name="budget_resumed">Budget resumed · %1$s</string>
+    <string name="budget_deleted">Budget deleted · %1$s</string>
+    <string name="could_not_pause_budget">Could not pause budget · %1$s</string>
+    <string name="could_not_resume_budget">Could not resume budget · %1$s</string>
+    <string name="could_not_delete_budget">Could not delete budget · %1$s</string>
+    <string name="budget_delete_dialog_title">Delete %1$s?</string>
+    <string name="budget_delete_dialog_message">Its transactions stay as they are. This can\'t be undone; pause it to keep it.</string>
+    <string name="budget_delete_dialog_confirm">Delete budget</string>
+
+    <!-- Budget page -->
+    <string name="budget_not_found_title">Budget not found</string>
+    <string name="budget_not_found_message">It may have been deleted, perhaps on another device.</string>
+    <string name="budget_back_to_budgets">Back to budgets</string>
+    <string name="budget_detail_meta">%1$s limit · %2$s</string>
+    <string name="budget_paused_notice">This budget is paused: it keeps its %1$s limit but sends no alerts. Resume it to track it again.</string>
+    <string name="budget_results_title">Results by period</string>
+    <string name="budget_before_started">Before this budget started</string>
+    <string name="budget_percent_used">%1$s used</string>
+    <string name="budget_transactions_title">Transactions · %1$s</string>
+    <string name="budget_show_more">Show more (%1$d)</string>
+    <string name="budget_nothing_spent_title">Nothing spent in this period</string>
+    <string name="budget_nothing_spent_message">Expenses this budget counts show up here.</string>
+
+    <!-- Budget form -->
+    <string name="budget_form_add_title">Add budget</string>
+    <string name="budget_form_edit_title">Edit budget</string>
+    <string name="budget_form_period">Period</string>
+    <string name="budget_form_this_period">This period: %1$s</string>
+    <string name="budget_form_limit">%1$s limit</string>
+    <string name="budget_form_categories">Categories</string>
+    <string name="budget_form_categories_hint">Leave empty to count every expense.</string>
+    <string name="budget_form_no_categories">You have no expense categories yet, so this budget counts every expense.</string>
+    <string name="budget_form_category_archived">%1$s (archived)</string>
+    <string name="budget_form_name">Name</string>
+    <string name="budget_form_rollover">Roll over what\'s left</string>
+    <string name="budget_form_rollover_hint">Adds what\'s left from %1$s to this one, or takes an overspend off it.</string>
+    <string name="budget_form_alerts" formatted="false">Alert me at 80% and 100%</string>
+    <string name="budget_form_alerts_hint">Once each, every period.</string>
+    <string name="budget_form_submit_add">Add budget</string>
+    <string name="budget_form_error_amount">Enter an amount</string>
+    <string name="budget_form_error_amount_positive">Enter an amount above zero</string>
+    <string name="budget_form_error_name_required">Name is required</string>
+    <string name="budget_form_error_name_long">Use at most 40 characters</string>
+    <string name="budget_added">Budget added · %1$s</string>
+    <string name="budget_updated">Budget updated · %1$s</string>
+
+    <!-- Budget alerts (NTF-01) -->
+    <string name="budget_alert_over">%1$s: over budget · %2$s over · %3$s</string>
+    <string name="budget_alert_over_nothing_left">%1$s: over budget · Nothing left to spend · %2$s</string>
+    <string name="budget_alert_warning">%1$s: %2$d%% used · %3$s left · %4$s</string>
 </resources>

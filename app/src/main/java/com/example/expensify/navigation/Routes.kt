@@ -25,4 +25,18 @@ object Routes {
     /** Add with no id; edit with one. */
     @Serializable
     data class AccountForm(val id: String? = null)
+
+    @Serializable
+    data object Categories
+
+    /** Add to the `type` list ("expense" or "income") with no id; edit with one. */
+    @Serializable
+    data class CategoryForm(val type: String, val id: String? = null)
+
+    @Serializable
+    data class BudgetDetail(val id: String)
+
+    /** Add with no id; edit with one. */
+    @Serializable
+    data class BudgetForm(val id: String? = null)
 }

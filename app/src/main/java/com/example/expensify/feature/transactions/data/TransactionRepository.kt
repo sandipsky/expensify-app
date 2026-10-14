@@ -1,6 +1,8 @@
 package com.example.expensify.feature.transactions.data
 
+import com.example.expensify.core.date.DateRange
 import com.example.expensify.core.date.toLocalDateOrNull
+import com.example.expensify.core.date.ymd
 import com.example.expensify.core.firebase.UserCollection
 import com.example.expensify.core.firebase.UserPaths
 import com.example.expensify.core.firebase.instant
@@ -12,6 +14,7 @@ import com.example.expensify.feature.transactions.domain.Transaction
 import com.example.expensify.feature.transactions.domain.TransactionRules
 import com.example.expensify.feature.transactions.domain.TxType
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
 import java.time.LocalDate
 import javax.inject.Inject
@@ -23,6 +26,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 interface TransactionRepository {
+    /** Entries dated within the range, both ends included, newest first, live (req §9.7). */
+    fun inRange(range: DateRange): Flow<List<Transaction>>
+
     /** Entries touching the account, on either side of a transfer, newest first, live (req ACC-09). */
     fun forAccount(accountId: String): Flow<List<Transaction>>
 }
@@ -39,13 +45,23 @@ class FirestoreTransactionRepository @Inject constructor(
     private val session: SessionRepository,
 ) : TransactionRepository {
 
-    override fun forAccount(accountId: String): Flow<List<Transaction>> = session.uid
+    override fun inRange(range: DateRange): Flow<List<Transaction>> = live { collection ->
+        collection
+            .whereGreaterThanOrEqualTo("date", range.start.ymd())
+            .whereLessThanOrEqualTo("date", range.end.ymd())
+    }
+
+    override fun forAccount(accountId: String): Flow<List<Transaction>> = live { collection ->
+        collection.whereArrayContains("accountIds", accountId)
+    }
+
+    /** The query on the user's collection, sorted newest first on the device; empty while logged out. */
+    private fun live(query: (Query) -> Query): Flow<List<Transaction>> = session.uid
         .flatMapLatest { uid ->
             if (uid == null) {
                 flowOf(emptyList())
             } else {
-                paths.collection(UserCollection.Transactions, uid)
-                    .whereArrayContains("accountIds", accountId)
+                query(paths.collection(UserCollection.Transactions, uid))
                     .snapshots()
                     .settled()
                     .map { snapshot ->

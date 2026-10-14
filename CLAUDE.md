@@ -41,15 +41,20 @@ one change) and deployed with `npm run deploy:rules` there, then used here. Neve
 
 ## State of the repo (October 2026)
 
-Phase 0 and the first slice of phases 1–2 are built and verified on the `Pixel_10` AVD against
+Phase 0 and the first slices of phases 1–3 are built and verified on the `Pixel_10` AVD against
 the emulators: the design system (`designsystem/`), the navigation shell with the bottom bar,
 Hilt and Firebase wiring, `core/` (Money, Periods, Today, AppError, UiText, Messages) with unit
-tests, **Login** (no signup yet), an empty **Home**, and the full **Accounts** feature: list with
-total and archived section, add/edit form, account page with its entries grouped by day,
-reconcile sheet, archive/restore, delete. Transactions and categories have read-only
-repositories for the account page; their screens, Budgets, Reports, Recurring and Settings
-are placeholders. `icon.png` (512 px, violet receipt) is still only the source art for a
-launcher icon.
+tests, **Login** (no signup yet; the profile is read live for preferences), an empty **Home**,
+the full **Accounts** feature (list with total and archived section, add/edit form, account
+page with its entries grouped by day, reconcile sheet, archive/restore, delete), the full
+**Categories** feature under More (expense/income tabs, add/edit with the 48-icon picker and
+palette color, archive/restore, delete, "Add default categories"), and the full **Budgets**
+feature (list with live meters, add/edit form, budget page with results by period and the
+expenses behind them, pause/resume, delete, and the foreground budget-alerts observer that
+records `lastAlert` and shows a snackbar; system notifications and the bell come with phase 3).
+Transactions has a read-only repository (`inRange`, `forAccount`); its screens, Reports,
+Recurring and Settings are placeholders. `icon.png` (512 px, violet receipt) is still only the
+source art for a launcher icon.
 
 Open decision to settle before registering the app in Firebase: the `applicationId` is still
 `com.example.expensify`. It is baked into `google-services.json` and permanent on Play, so pick

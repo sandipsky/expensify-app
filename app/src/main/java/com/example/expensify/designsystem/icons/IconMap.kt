@@ -16,13 +16,17 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Checkroom
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -42,9 +46,11 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material.icons.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Refresh
@@ -58,12 +64,14 @@ import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material.icons.rounded.Train
 import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.VolunteerActivism
 import androidx.compose.material.icons.rounded.Wallet
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material.icons.rounded.Work
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -97,6 +105,15 @@ object AppIcons {
     val Settings = Icons.Rounded.Settings
     val Transfer = Icons.Rounded.SwapHoriz
     val Unknown = Icons.AutoMirrored.Rounded.Help
+    val Pause = Icons.Rounded.Pause
+    val Resume = Icons.Rounded.PlayArrow
+    val Check = Icons.Rounded.Check
+    val ChevronRight = Icons.Rounded.ChevronRight
+
+    // Budget states, always beside their label (req NFR-06).
+    val OnTrack = Icons.Rounded.ThumbUp
+    val Warning = Icons.Rounded.Warning
+    val Over = Icons.Rounded.Error
 }
 
 /**
@@ -158,6 +175,8 @@ object IconMap {
         "add" to Icons.Rounded.Add,
         // Account type icons not in the category set.
         "wallet_alt" to Icons.Rounded.Wallet,
+        // Drawn by the app for a budget over every expense or several categories.
+        "donut_large" to Icons.Rounded.DonutLarge,
         // Drawn by the app for transfers and deleted categories.
         "help" to AppIcons.Unknown,
     )

@@ -30,5 +30,13 @@ data class Category(
     val updatedAt: Instant,
 )
 
+/** What a form saves; the repository sets the id, the archived flag, the sort order and the timestamps. */
+data class CategoryBody(
+    val name: String,
+    val type: CategoryType,
+    val icon: String,
+    val color: String,
+)
+
 /** By `sortOrder`, then name (req CAT-07). */
 val categoryOrder: Comparator<Category> = compareBy<Category> { it.sortOrder }.thenBy { it.name.lowercase() }
