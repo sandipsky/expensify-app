@@ -77,4 +77,72 @@ object Routes {
     /** Add with nothing set; edit with `id`; or "Make recurring" from the transaction `fromTransaction` (req TXN-09). */
     @Serializable
     data class RuleForm(val id: String? = null, val fromTransaction: String? = null)
+
+    // Reports (req RPT-02): every filter is an argument, as the web keeps them in the URL,
+    // and the ViewModels write changes back to the same saved-state keys.
+
+    @Serializable
+    data object Reports
+
+    /** `period` is a `ReportPreset`; `from`/`to` the custom range; `by` a `Granularity`; `accounts` ids joined by commas. */
+    @Serializable
+    data class CashFlowReport(
+        val period: String? = null,
+        val from: String? = null,
+        val to: String? = null,
+        val by: String? = null,
+        val accounts: String? = null,
+    )
+
+    /** `type` is "expense" or "income". */
+    @Serializable
+    data class CategoryReport(
+        val period: String? = null,
+        val from: String? = null,
+        val to: String? = null,
+        val type: String? = null,
+        val accounts: String? = null,
+    )
+
+    @Serializable
+    data class CategoryTrendsReport(
+        val period: String? = null,
+        val from: String? = null,
+        val to: String? = null,
+        val type: String? = null,
+        val accounts: String? = null,
+        val categories: String? = null,
+    )
+
+    @Serializable
+    data class AccountsReport(
+        val period: String? = null,
+        val from: String? = null,
+        val to: String? = null,
+        val by: String? = null,
+        val accounts: String? = null,
+    )
+
+    /** One budget's periods with `budget`; `periods` is 6, 12 or 24. */
+    @Serializable
+    data class BudgetReport(
+        val budget: String? = null,
+        val periods: Int? = null,
+        val early: Boolean = false,
+        val paused: Boolean = false,
+    )
+
+    // Settings (req SET-01…SET-05)
+
+    @Serializable
+    data object Settings
+
+    @Serializable
+    data object ProfileForm
+
+    @Serializable
+    data object ChangePassword
+
+    @Serializable
+    data object DeleteAccount
 }

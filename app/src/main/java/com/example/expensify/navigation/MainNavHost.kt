@@ -29,6 +29,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.expensify.R
+import com.example.expensify.core.date.ymd
 import com.example.expensify.designsystem.icons.AppIcons
 import com.example.expensify.feature.accounts.ui.AccountDetailRoute
 import com.example.expensify.feature.accounts.ui.AccountFormRoute
@@ -42,7 +43,20 @@ import com.example.expensify.feature.dashboard.ui.HomeRoute
 import com.example.expensify.feature.recurring.ui.RecurringRoute
 import com.example.expensify.feature.recurring.ui.RuleDetailRoute
 import com.example.expensify.feature.recurring.ui.RuleFormRoute
+import com.example.expensify.feature.reports.domain.ReportKey
+import com.example.expensify.feature.reports.ui.AccountsReportRoute
+import com.example.expensify.feature.reports.ui.BudgetReportRoute
+import com.example.expensify.feature.reports.ui.CashFlowRoute
+import com.example.expensify.feature.reports.ui.CategoryReportRoute
+import com.example.expensify.feature.reports.ui.CategoryTrendsRoute
+import com.example.expensify.feature.reports.ui.DrillDown
+import com.example.expensify.feature.reports.ui.IdsParam
+import com.example.expensify.feature.reports.ui.ReportsScreen
+import com.example.expensify.feature.settings.ui.ChangePasswordRoute
+import com.example.expensify.feature.settings.ui.DeleteAccountRoute
 import com.example.expensify.feature.settings.ui.MoreRoute
+import com.example.expensify.feature.settings.ui.ProfileFormRoute
+import com.example.expensify.feature.settings.ui.SettingsRoute
 import com.example.expensify.feature.transactions.ui.EntryFormRoute
 import com.example.expensify.feature.transactions.ui.TransactionDetailRoute
 import com.example.expensify.feature.transactions.ui.TransactionsRoute
@@ -67,6 +81,15 @@ private fun NavController.navigateTopLevel(route: Any) = navigate(route) {
     restoreState = true
 }
 
+/** The list on the entries behind a report figure (req RPT-02), the way the web links to `/transactions?…`. */
+private fun DrillDown.toRoute() = Routes.Transactions(
+    from = range.start.ymd(),
+    to = range.end.ymd(),
+    type = type?.stored,
+    category = IdsParam.of(categoryIds),
+    account = IdsParam.of(accountIds),
+)
+
 /**
  * The signed-in shell. The outer Scaffold owns the bottom bar, the snackbar
  * host and the bottom insets; each screen owns its top bar and the top
@@ -87,6 +110,8 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
     val openRule = { id: String -> navController.navigate(Routes.RuleDetail(id)) }
     val editRule = { id: String -> navController.navigate(Routes.RuleForm(id = id)) }
     val confirmEdited = { ruleId: String, date: String -> navController.navigate(Routes.EntryForm(ruleId = ruleId, dueDate = date)) }
+    val openTransactions = { drill: DrillDown -> navController.navigate(drill.toRoute()) }
+    val back = { navController.popBackStack(); Unit }
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
@@ -126,7 +151,7 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
             }
             composable<Routes.TransactionDetail> {
                 TransactionDetailRoute(
-                    onBack = { navController.popBackStack() },
+                    onBack = back,
                     onEdit = editEntry,
                     onDuplicate = duplicateEntry,
                     onMakeRecurring = makeRecurring,
@@ -135,7 +160,7 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
             }
             composable<Routes.EntryForm> {
                 EntryFormRoute(
-                    onDone = { navController.popBackStack() },
+                    onDone = back,
                     onDuplicate = { id ->
                         navController.navigate(Routes.EntryForm(duplicateOf = id)) { popUpTo<Routes.EntryForm> { inclusive = true } }
                     },
@@ -163,44 +188,46 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
             }
             composable<Routes.More> {
                 MoreRoute(
-                    onOpenCategories = { navController.navigate(Routes.Categories) },
+                    onOpenReports = { navController.navigate(Routes.Reports) },
                     onOpenRecurring = { navController.navigate(Routes.Recurring) },
+                    onOpenCategories = { navController.navigate(Routes.Categories) },
+                    onOpenSettings = { navController.navigate(Routes.Settings) },
                 )
             }
             composable<Routes.AccountDetail> {
                 AccountDetailRoute(
-                    onBack = { navController.popBackStack() },
+                    onBack = back,
                     onEdit = { navController.navigate(Routes.AccountForm(it)) },
                     onAddEntry = { navController.navigate(Routes.EntryForm(accountId = it)) },
                     onOpenEntry = openEntry,
                 )
             }
             composable<Routes.AccountForm> {
-                AccountFormRoute(onDone = { navController.popBackStack() })
+                AccountFormRoute(onDone = back)
             }
             composable<Routes.Categories> {
                 CategoriesRoute(
-                    onBack = { navController.popBackStack() },
+                    onBack = back,
                     onAdd = { navController.navigate(Routes.CategoryForm(type = it.stored)) },
                     onEdit = { navController.navigate(Routes.CategoryForm(type = it.type.stored, id = it.id)) },
                 )
             }
             composable<Routes.CategoryForm> {
-                CategoryFormRoute(onDone = { navController.popBackStack() })
+                CategoryFormRoute(onDone = back)
             }
             composable<Routes.BudgetDetail> {
                 BudgetDetailRoute(
-                    onBack = { navController.popBackStack() },
+                    onBack = back,
                     onEdit = { navController.navigate(Routes.BudgetForm(it)) },
                     onOpenEntry = openEntry,
                 )
             }
             composable<Routes.BudgetForm> {
-                BudgetFormRoute(onDone = { navController.popBackStack() })
+                BudgetFormRoute(onDone = back)
             }
             composable<Routes.Recurring> {
                 RecurringRoute(
-                    onBack = { navController.popBackStack() },
+                    onBack = back,
                     onOpenRule = openRule,
                     onAddRule = { navController.navigate(Routes.RuleForm()) },
                     onEditRule = editRule,
@@ -209,14 +236,71 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
             }
             composable<Routes.RuleDetail> {
                 RuleDetailRoute(
-                    onBack = { navController.popBackStack() },
+                    onBack = back,
                     onEditRule = editRule,
                     onOpenEntry = openEntry,
                     onConfirmEdited = confirmEdited,
                 )
             }
             composable<Routes.RuleForm> {
-                RuleFormRoute(onDone = { navController.popBackStack() })
+                RuleFormRoute(onDone = back)
+            }
+
+            // Reports (req RPT-01…RPT-08)
+            composable<Routes.Reports> {
+                ReportsScreen(
+                    onBack = back,
+                    onOpen = { key ->
+                        navController.navigate(
+                            when (key) {
+                                ReportKey.CashFlow -> Routes.CashFlowReport()
+                                ReportKey.Categories -> Routes.CategoryReport()
+                                ReportKey.CategoryTrends -> Routes.CategoryTrendsReport()
+                                ReportKey.Accounts -> Routes.AccountsReport()
+                                ReportKey.Budgets -> Routes.BudgetReport()
+                            },
+                        )
+                    },
+                )
+            }
+            composable<Routes.CashFlowReport> {
+                CashFlowRoute(onBack = back, onOpenTransactions = openTransactions)
+            }
+            composable<Routes.CategoryReport> {
+                CategoryReportRoute(onBack = back, onOpenTransactions = openTransactions)
+            }
+            composable<Routes.CategoryTrendsReport> {
+                CategoryTrendsRoute(onBack = back, onOpenTransactions = openTransactions)
+            }
+            composable<Routes.AccountsReport> {
+                AccountsReportRoute(onBack = back, onOpenAccount = { navController.navigate(Routes.AccountDetail(it)) })
+            }
+            composable<Routes.BudgetReport> {
+                BudgetReportRoute(
+                    onBack = back,
+                    onOpenBudget = { navController.navigate(Routes.BudgetDetail(it)) },
+                    onGoToBudgets = { navController.navigateTopLevel(Routes.Budgets) },
+                    onOpenTransactions = openTransactions,
+                )
+            }
+
+            // Settings (req SET-01…SET-05)
+            composable<Routes.Settings> {
+                SettingsRoute(
+                    onBack = back,
+                    onEditProfile = { navController.navigate(Routes.ProfileForm) },
+                    onChangePassword = { navController.navigate(Routes.ChangePassword) },
+                    onDeleteAccount = { navController.navigate(Routes.DeleteAccount) },
+                )
+            }
+            composable<Routes.ProfileForm> {
+                ProfileFormRoute(onDone = back)
+            }
+            composable<Routes.ChangePassword> {
+                ChangePasswordRoute(onDone = back)
+            }
+            composable<Routes.DeleteAccount> {
+                DeleteAccountRoute(onClose = back)
             }
         }
     }

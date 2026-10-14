@@ -26,6 +26,15 @@ data class Preferences(
     val notifications: NotificationPrefs = NotificationPrefs(),
 )
 
+/** Preferences to change; null fields stay as they are (the web's `IPreferencesBody`). */
+data class PreferencesPatch(
+    val theme: ThemePref? = null,
+    val dailyReminder: Boolean? = null,
+    val reminderTime: String? = null,
+    val budgetAlerts: Boolean? = null,
+    val billReminders: Boolean? = null,
+)
+
 /** users/{uid} (req §8). */
 data class Profile(
     val uid: String,

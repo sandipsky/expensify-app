@@ -2,8 +2,11 @@ package com.example.expensify.core.date
 
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.time.format.FormatStyle
 import java.util.Locale
 
 /** "Today", "Yesterday" or "Tomorrow", when a date is one of those. */
@@ -34,6 +37,16 @@ object DateFormats {
         range.start.year == range.end.year ->
             DateTimeFormatter.ofPattern("d MMM", locale).format(range.start) + " – " + shortDate(range.end, locale)
         else -> shortDate(range.start, locale) + " – " + shortDate(range.end, locale)
+    }
+
+    /** "8:00 PM", or "20:00" where the locale uses a 24-hour clock, for a `HH:mm` time; the text itself when it isn't one. */
+    fun timeOfDay(time: String, locale: Locale = Locale.getDefault()): String {
+        val parsed = try {
+            LocalTime.parse(time)
+        } catch (_: DateTimeParseException) {
+            return time
+        }
+        return DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(parsed)
     }
 
     fun nearOf(date: LocalDate, today: LocalDate): Near? = when (date) {

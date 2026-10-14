@@ -60,8 +60,20 @@ is **Recurring** under More (list with "Waiting for you", active, paused and end
 next dates and the entries added; rule form with the next-dates preview; Confirm / Skip / Edit
 for ask-first rules; the foreground runner that adds automatic rules' due entries, oldest first,
 100 per write; a daily WorkManager catch-up job while the app is closed; the waiting-count badge
-on More). Reports and Settings are placeholders; the dashboard is still a greeting with the Add
-FAB. `icon.png` (512 px, violet receipt) is still only the source art for a launcher icon.
+on More). **Reports** under More is built: the five reports (cash flow, spending by category,
+category trends, accounts and net worth, budget history) with filters kept in the route's saved
+state, tiles, Canvas bar and donut charts, tables with a pinned first column, and drill-downs into
+the transaction list; `feature/reports/domain/ReportRules.kt` and
+`feature/dashboard/domain/DashboardRules.kt` are the 1:1 ports with tests. Excel/PDF export is not
+built (phase 4), so the report cards don't mention it. **Settings** is built: profile (photo as a
+128 px JPEG data URL, name, email change with the verification link, read-only username), change
+password, theme (applied at once and cached in DataStore for the first frame), the notification
+switches with the reminder time and the phone's notification permission, delete all transactions
+with the count, and delete account with typed DELETE + password; `AuthRepository` now has the
+web's `updateProfile`/`updatePreferences`/`changeEmail`/`changePassword`/`deleteAccount` and the
+profile-load repairs (`syncLogin`). The dashboard is still a greeting with the Add FAB; the alerts
+bell and system notifications are still phase 3. `icon.png` (512 px, violet receipt) is still
+only the source art for a launcher icon.
 
 Open decision to settle before registering the app in Firebase: the `applicationId` is still
 `com.example.expensify`. It is baked into `google-services.json` and permanent on Play, so pick

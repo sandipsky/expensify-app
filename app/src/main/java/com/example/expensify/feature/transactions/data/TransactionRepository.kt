@@ -37,6 +37,13 @@ interface TransactionRepository {
     /** Entries dated within the range, both ends included, newest first, live (req §9.7). */
     fun inRange(range: DateRange): Flow<List<Transaction>>
 
+    /**
+     * Entries dated on or after `start`, future ones too, newest first, live.
+     * The accounts report works balances back from today's, so it needs every
+     * later entry (req RPT-07, BR-17). Still one filter on `date` (req §9.7).
+     */
+    fun fromDate(start: LocalDate): Flow<List<Transaction>>
+
     /** Entries touching the account, on either side of a transfer, newest first, live (req ACC-09). */
     fun forAccount(accountId: String): Flow<List<Transaction>>
 
@@ -89,6 +96,10 @@ class FirestoreTransactionRepository @Inject constructor(
         collection
             .whereGreaterThanOrEqualTo("date", range.start.ymd())
             .whereLessThanOrEqualTo("date", range.end.ymd())
+    }
+
+    override fun fromDate(start: LocalDate): Flow<List<Transaction>> = live { collection ->
+        collection.whereGreaterThanOrEqualTo("date", start.ymd())
     }
 
     override fun forAccount(accountId: String): Flow<List<Transaction>> = live { collection ->

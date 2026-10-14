@@ -391,7 +391,7 @@ private fun EntryFormPreview() {
                 accounts = TxRows.accountPicks(SampleAccounts.active, emptyList()),
                 categories = TxRows.categoryPicks(SampleCategories.all, TxType.Expense, null),
             ),
-            amountFocus = FocusRequester(),
+            amountFocus = androidx.compose.runtime.remember { FocusRequester() },
             onTypeChange = {}, onAmountChange = {}, onAccountChange = {}, onToAccountChange = {}, onCategoryChange = {},
             onDateChange = {}, onDaysAgo = {}, onNoteChange = {}, onAddDefaults = {}, onSave = {}, onSaveAndAddAnother = {},
             onClose = {}, onDuplicate = {}, onMakeRecurring = {}, onOpenRule = {}, onDelete = {},

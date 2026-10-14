@@ -2,7 +2,6 @@ package com.example.expensify.feature.settings.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -56,8 +53,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** Who is logged in, as the account card shows: the profile's name, email and photo, with the login as a fallback. */
+data class MoreAccountUi(val name: String, val email: String, val photoUrl: String?)
 
 @HiltViewModel
 class MoreViewModel @Inject constructor(
@@ -65,7 +66,14 @@ class MoreViewModel @Inject constructor(
     waiting: WaitingCount,
     private val auth: AuthRepository,
 ) : ViewModel() {
-    val session: StateFlow<Session> = session.session
+    val account: StateFlow<MoreAccountUi> = combine(session.session, auth.profile()) { session, profile ->
+        val signedIn = session as? Session.SignedIn
+        MoreAccountUi(
+            name = profile?.name?.takeIf { it.isNotBlank() } ?: signedIn?.name.orEmpty(),
+            email = profile?.email?.takeIf { it.isNotBlank() } ?: signedIn?.email.orEmpty(),
+            photoUrl = profile?.photoUrl,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MoreAccountUi("", "", null))
 
     /** How many ask-first recurring entries wait, for the badge on Recurring (req REC-07). */
     val waitingCount: StateFlow<Int> = waiting.count.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
@@ -76,29 +84,36 @@ class MoreViewModel @Inject constructor(
 }
 
 @Composable
-fun MoreRoute(onOpenCategories: () -> Unit, onOpenRecurring: () -> Unit, viewModel: MoreViewModel = hiltViewModel()) {
-    val session by viewModel.session.collectAsStateWithLifecycle()
+fun MoreRoute(
+    onOpenReports: () -> Unit,
+    onOpenRecurring: () -> Unit,
+    onOpenCategories: () -> Unit,
+    onOpenSettings: () -> Unit,
+    viewModel: MoreViewModel = hiltViewModel(),
+) {
+    val account by viewModel.account.collectAsStateWithLifecycle()
     val waiting by viewModel.waitingCount.collectAsStateWithLifecycle()
-    val signedIn = session as? Session.SignedIn
     MoreScreen(
-        name = signedIn?.name.orEmpty(),
-        email = signedIn?.email.orEmpty(),
+        account = account,
         waitingCount = waiting,
-        onOpenCategories = onOpenCategories,
+        onOpenReports = onOpenReports,
         onOpenRecurring = onOpenRecurring,
+        onOpenCategories = onOpenCategories,
+        onOpenSettings = onOpenSettings,
         onLogout = viewModel::logout,
     )
 }
 
-/** The rest of the sidebar: who is logged in, Recurring with its waiting count, Categories, the sections still to come, and Log out. */
+/** The rest of the sidebar: who is logged in, Reports, Recurring with its waiting count, Categories, Settings, and Log out. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreScreen(
-    name: String,
-    email: String,
+    account: MoreAccountUi,
     waitingCount: Int,
-    onOpenCategories: () -> Unit,
+    onOpenReports: () -> Unit,
     onOpenRecurring: () -> Unit,
+    onOpenCategories: () -> Unit,
+    onOpenSettings: () -> Unit,
     onLogout: () -> Unit,
 ) {
     Scaffold(
@@ -119,39 +134,32 @@ fun MoreScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppCard {
+            AppCard(onClick = onOpenSettings) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
-                        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                            Text(
-                                initialsOf(name),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                        }
-                    }
+                    Avatar(name = account.name, photoUrl = account.photoUrl, size = 48.dp)
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(account.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            email,
+                            account.email,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    Icon(AppIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             AppCard(contentPadding = PaddingValues(vertical = 4.dp)) {
-                MoreItem(AppIcons.Reports, R.string.more_reports)
+                MoreItem(AppIcons.Reports, R.string.more_reports, onClick = onOpenReports)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 MoreItem(AppIcons.Recurring, R.string.more_recurring, badge = waitingCount, onClick = onOpenRecurring)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 MoreItem(AppIcons.Categories, R.string.more_categories, onClick = onOpenCategories)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                MoreItem(AppIcons.Settings, R.string.more_settings)
+                MoreItem(AppIcons.Settings, R.string.more_settings, onClick = onOpenSettings)
             }
 
             OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
@@ -170,13 +178,13 @@ fun MoreScreen(
     }
 }
 
-/** A row to a section; without `onClick` it only says the section is still to come. A badge counts what waits there. */
+/** A row to a section; a badge counts what waits there. */
 @Composable
-private fun MoreItem(icon: ImageVector, labelRes: Int, badge: Int = 0, onClick: (() -> Unit)? = null) {
+private fun MoreItem(icon: ImageVector, labelRes: Int, badge: Int = 0, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -186,25 +194,18 @@ private fun MoreItem(icon: ImageVector, labelRes: Int, badge: Int = 0, onClick: 
         if (badge > 0) {
             Badge(modifier = Modifier.padding(end = 8.dp)) { Text(badge.toString()) }
         }
-        if (onClick == null) {
-            Text(
-                stringResource(R.string.coming_soon_title),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            Icon(AppIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Icon(AppIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
-
-private fun initialsOf(name: String): String =
-    name.split(' ').filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }.ifEmpty { "?" }
 
 @PreviewLightDark
 @Composable
 private fun MorePreview() {
     ExpensifyTheme {
-        MoreScreen(name = "Sita Rai", email = "sita@example.com", waitingCount = 2, onOpenCategories = {}, onOpenRecurring = {}, onLogout = {})
+        MoreScreen(
+            account = MoreAccountUi("Sita Rai", "sita@example.com", null),
+            waitingCount = 2,
+            onOpenReports = {}, onOpenRecurring = {}, onOpenCategories = {}, onOpenSettings = {}, onLogout = {},
+        )
     }
 }
