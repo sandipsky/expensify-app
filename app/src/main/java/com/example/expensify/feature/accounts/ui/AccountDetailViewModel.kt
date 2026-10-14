@@ -11,17 +11,15 @@ import com.example.expensify.core.money.Money
 import com.example.expensify.core.ui.Messages
 import com.example.expensify.core.ui.UiText
 import com.example.expensify.core.ui.plain
-import com.example.expensify.designsystem.components.EntryRowUi
 import com.example.expensify.feature.accounts.data.AccountRepository
 import com.example.expensify.feature.accounts.domain.Account
 import com.example.expensify.feature.accounts.domain.AccountRules
 import com.example.expensify.feature.categories.data.CategoryRepository
 import com.example.expensify.feature.transactions.data.TransactionRepository
-import com.example.expensify.feature.transactions.domain.TransactionRules
+import com.example.expensify.feature.transactions.ui.DayUi
 import com.example.expensify.feature.transactions.ui.TxRows
 import com.example.expensify.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -31,9 +29,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
-
-/** One day of the account's history, newest first. */
-data class DayUi(val date: LocalDate, val label: UiText, val net: Money, val rows: List<EntryRowUi>)
 
 sealed interface AccountDetailUiState {
     data object Loading : AccountDetailUiState
@@ -80,21 +75,13 @@ class AccountDetailViewModel @Inject constructor(
         today.date,
     ) { account, txs, accounts, categories, today ->
         val lookups = TxRows.Lookups(accounts, categories, today)
-        val days = TransactionRules.groupByDay(txs) { it.date }.map { day ->
-            DayUi(
-                date = day.date,
-                label = TxRows.dayLabel(day.date, today),
-                net = TransactionRules.totalsOf(day.items).net,
-                rows = day.items.map { TxRows.toRow(it, lookups) },
-            )
-        }
         AccountDetailUiState.Content(
             account = account,
             balance = AccountRules.balanceView(account.type, account.currentBalance),
             opening = AccountRules.flipForLiability(account.type, account.openingBalance),
             openingLabelRes = if (account.type.isLiability) R.string.balance_caption_opening_owed else R.string.balance_caption_opening,
             utilization = AccountRules.utilizationView(account),
-            days = days,
+            days = TxRows.days(txs, lookups),
             entryCount = txs.size,
         ) as AccountDetailUiState
     }

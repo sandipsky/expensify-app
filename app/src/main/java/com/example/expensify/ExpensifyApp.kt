@@ -1,12 +1,24 @@
 package com.example.expensify
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 @HiltAndroidApp
-class ExpensifyApp : Application() {
+class ExpensifyApp : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    // WorkManager's default initializer is removed in the manifest, so its
+    // workers can be built by Hilt (the recurring catch-up job).
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
+
     override fun onCreate() {
         super.onCreate()
         // Without google-services.json there is no default FirebaseApp. Debug

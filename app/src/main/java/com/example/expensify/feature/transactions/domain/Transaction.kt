@@ -11,7 +11,8 @@ enum class TxType(val stored: String) {
     ;
 
     companion object {
-        fun fromStored(value: String?): TxType = entries.firstOrNull { it.stored == value } ?: Expense
+        fun fromStored(value: String?): TxType = fromStoredOrNull(value) ?: Expense
+        fun fromStoredOrNull(value: String?): TxType? = entries.firstOrNull { it.stored == value }
     }
 }
 
@@ -35,4 +36,18 @@ data class Transaction(
     val recurringRuleId: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
+)
+
+/**
+ * What a form saves when creating or updating; the repository sets the id,
+ * the currency (the account's), the rule that added it and the timestamps.
+ */
+data class TransactionBody(
+    val type: TxType,
+    val amount: Money,
+    val accountId: String,
+    val toAccountId: String?,
+    val categoryId: String?,
+    val date: LocalDate,
+    val note: String?,
 )

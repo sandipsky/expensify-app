@@ -52,9 +52,16 @@ palette color, archive/restore, delete, "Add default categories"), and the full 
 feature (list with live meters, add/edit form, budget page with results by period and the
 expenses behind them, pause/resume, delete, and the foreground budget-alerts observer that
 records `lastAlert` and shows a snackbar; system notifications and the bell come with phase 3).
-Transactions has a read-only repository (`inRange`, `forAccount`); its screens, Reports,
-Recurring and Settings are placeholders. `icon.png` (512 px, violet receipt) is still only the
-source art for a launcher icon.
+The full **Transactions** feature is built (list with period chips, search, filters sheet and
+chips, totals strip, day groups; add/edit/duplicate form with the category grid, account picker,
+date chips and "Save and add another"; entry page with Make recurring / Open recurring rule;
+delete with balance moves in one Firestore transaction; last-used account in DataStore), and so
+is **Recurring** under More (list with "Waiting for you", active, paused and ended; rule page with
+next dates and the entries added; rule form with the next-dates preview; Confirm / Skip / Edit
+for ask-first rules; the foreground runner that adds automatic rules' due entries, oldest first,
+100 per write; a daily WorkManager catch-up job while the app is closed; the waiting-count badge
+on More). Reports and Settings are placeholders; the dashboard is still a greeting with the Add
+FAB. `icon.png` (512 px, violet receipt) is still only the source art for a launcher icon.
 
 Open decision to settle before registering the app in Firebase: the `applicationId` is still
 `com.example.expensify`. It is baked into `google-services.json` and permanent on Play, so pick
@@ -202,6 +209,11 @@ The full model is requirements §8/§9. These are the places an Android port goe
   it and `MainActivity` asks for it once when `USE_EMULATORS` is on; for scripted runs grant it
   with `adb shell pm grant com.example.expensify android.permission.ACCESS_LOCAL_NETWORK`. Release
   builds never need it. `adb shell` is exempt, so `nc` from the shell proves nothing about the app.
+- The recurring catch-up also runs as a daily WorkManager job while the app is closed. Its first
+  window opens ~23 h after sign-in and WorkManager refuses to run a periodic job early, so to check
+  the closed-app path kill the app in the background (`adb shell am kill com.example.expensify`, never
+  `force-stop`, which drops the jobs) and run the debug-only hook:
+  `adb shell am broadcast -n com.example.expensify/.feature.recurring.work.DebugCatchUpReceiver`.
 - No `google-services.json` yet: `ExpensifyApp` initialises Firebase by hand for the demo project
   in debug builds, and there is no Firebase config for release until the app is registered.
 

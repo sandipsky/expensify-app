@@ -7,4 +7,12 @@
      Release builds talk to Firebase on the internet and never need it. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
+    <application>
+        <!-- A terminal hook to run the recurring catch-up worker once without opening the app:
+             adb shell am broadcast -n com.example.expensify/.feature.recurring.work.DebugCatchUpReceiver -->
+        <receiver
+            android:name=".feature.recurring.work.DebugCatchUpReceiver"
+            android:exported="true" />
+    </application>
 </manifest>

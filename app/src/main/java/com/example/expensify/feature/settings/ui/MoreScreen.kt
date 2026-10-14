@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,17 +51,24 @@ import com.example.expensify.designsystem.theme.ExpensifyTheme
 import com.example.expensify.feature.auth.data.AuthRepository
 import com.example.expensify.feature.auth.data.Session
 import com.example.expensify.feature.auth.data.SessionRepository
+import com.example.expensify.feature.recurring.ui.WaitingCount
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class MoreViewModel @Inject constructor(
     session: SessionRepository,
+    waiting: WaitingCount,
     private val auth: AuthRepository,
 ) : ViewModel() {
     val session: StateFlow<Session> = session.session
+
+    /** How many ask-first recurring entries wait, for the badge on Recurring (req REC-07). */
+    val waitingCount: StateFlow<Int> = waiting.count.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     fun logout() {
         viewModelScope.launch { auth.logout() }
@@ -68,21 +76,31 @@ class MoreViewModel @Inject constructor(
 }
 
 @Composable
-fun MoreRoute(onOpenCategories: () -> Unit, viewModel: MoreViewModel = hiltViewModel()) {
+fun MoreRoute(onOpenCategories: () -> Unit, onOpenRecurring: () -> Unit, viewModel: MoreViewModel = hiltViewModel()) {
     val session by viewModel.session.collectAsStateWithLifecycle()
+    val waiting by viewModel.waitingCount.collectAsStateWithLifecycle()
     val signedIn = session as? Session.SignedIn
     MoreScreen(
         name = signedIn?.name.orEmpty(),
         email = signedIn?.email.orEmpty(),
+        waitingCount = waiting,
         onOpenCategories = onOpenCategories,
+        onOpenRecurring = onOpenRecurring,
         onLogout = viewModel::logout,
     )
 }
 
-/** The rest of the sidebar: who is logged in, Categories, the sections still to come, and Log out. */
+/** The rest of the sidebar: who is logged in, Recurring with its waiting count, Categories, the sections still to come, and Log out. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoreScreen(name: String, email: String, onOpenCategories: () -> Unit, onLogout: () -> Unit) {
+fun MoreScreen(
+    name: String,
+    email: String,
+    waitingCount: Int,
+    onOpenCategories: () -> Unit,
+    onOpenRecurring: () -> Unit,
+    onLogout: () -> Unit,
+) {
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         containerColor = MaterialTheme.colorScheme.background,
@@ -129,7 +147,7 @@ fun MoreScreen(name: String, email: String, onOpenCategories: () -> Unit, onLogo
             AppCard(contentPadding = PaddingValues(vertical = 4.dp)) {
                 MoreItem(AppIcons.Reports, R.string.more_reports)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                MoreItem(AppIcons.Recurring, R.string.more_recurring)
+                MoreItem(AppIcons.Recurring, R.string.more_recurring, badge = waitingCount, onClick = onOpenRecurring)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 MoreItem(AppIcons.Categories, R.string.more_categories, onClick = onOpenCategories)
                 HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
@@ -152,9 +170,9 @@ fun MoreScreen(name: String, email: String, onOpenCategories: () -> Unit, onLogo
     }
 }
 
-/** A row to a section; without `onClick` it only says the section is still to come. */
+/** A row to a section; without `onClick` it only says the section is still to come. A badge counts what waits there. */
 @Composable
-private fun MoreItem(icon: ImageVector, labelRes: Int, onClick: (() -> Unit)? = null) {
+private fun MoreItem(icon: ImageVector, labelRes: Int, badge: Int = 0, onClick: (() -> Unit)? = null) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -165,6 +183,9 @@ private fun MoreItem(icon: ImageVector, labelRes: Int, onClick: (() -> Unit)? = 
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(16.dp))
         Text(stringResource(labelRes), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        if (badge > 0) {
+            Badge(modifier = Modifier.padding(end = 8.dp)) { Text(badge.toString()) }
+        }
         if (onClick == null) {
             Text(
                 stringResource(R.string.coming_soon_title),
@@ -183,5 +204,7 @@ private fun initialsOf(name: String): String =
 @PreviewLightDark
 @Composable
 private fun MorePreview() {
-    ExpensifyTheme { MoreScreen(name = "Sita Rai", email = "sita@example.com", onOpenCategories = {}, onLogout = {}) }
+    ExpensifyTheme {
+        MoreScreen(name = "Sita Rai", email = "sita@example.com", waitingCount = 2, onOpenCategories = {}, onOpenRecurring = {}, onLogout = {})
+    }
 }

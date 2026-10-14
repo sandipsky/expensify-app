@@ -29,7 +29,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.expensify.R
-import com.example.expensify.designsystem.components.ComingSoonScreen
 import com.example.expensify.designsystem.icons.AppIcons
 import com.example.expensify.feature.accounts.ui.AccountDetailRoute
 import com.example.expensify.feature.accounts.ui.AccountFormRoute
@@ -40,7 +39,13 @@ import com.example.expensify.feature.budgets.ui.BudgetsRoute
 import com.example.expensify.feature.categories.ui.CategoriesRoute
 import com.example.expensify.feature.categories.ui.CategoryFormRoute
 import com.example.expensify.feature.dashboard.ui.HomeRoute
+import com.example.expensify.feature.recurring.ui.RecurringRoute
+import com.example.expensify.feature.recurring.ui.RuleDetailRoute
+import com.example.expensify.feature.recurring.ui.RuleFormRoute
 import com.example.expensify.feature.settings.ui.MoreRoute
+import com.example.expensify.feature.transactions.ui.EntryFormRoute
+import com.example.expensify.feature.transactions.ui.TransactionDetailRoute
+import com.example.expensify.feature.transactions.ui.TransactionsRoute
 import kotlin.reflect.KClass
 
 private class TopLevel(val route: Any, val routeClass: KClass<*>, val labelRes: Int, val icon: ImageVector)
@@ -48,7 +53,7 @@ private class TopLevel(val route: Any, val routeClass: KClass<*>, val labelRes: 
 /** The bottom bar: the web's sidebar, phone first (CLAUDE.md, Information architecture). */
 private val TOP_LEVEL = listOf(
     TopLevel(Routes.Home, Routes.Home::class, R.string.nav_home, AppIcons.Home),
-    TopLevel(Routes.Transactions, Routes.Transactions::class, R.string.nav_transactions, AppIcons.Transactions),
+    TopLevel(Routes.Transactions(), Routes.Transactions::class, R.string.nav_transactions, AppIcons.Transactions),
     TopLevel(Routes.Accounts, Routes.Accounts::class, R.string.nav_accounts, AppIcons.Accounts),
     TopLevel(Routes.Budgets, Routes.Budgets::class, R.string.nav_budgets, AppIcons.Budgets),
     TopLevel(Routes.More, Routes.More::class, R.string.nav_more, AppIcons.More),
@@ -73,6 +78,15 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
     val showBar = TOP_LEVEL.any { destination.isTopLevel(it) }
+
+    val openEntry = { id: String -> navController.navigate(Routes.TransactionDetail(id)) }
+    val addEntry = { navController.navigate(Routes.EntryForm()) }
+    val editEntry = { id: String -> navController.navigate(Routes.EntryForm(editId = id)) }
+    val duplicateEntry = { id: String -> navController.navigate(Routes.EntryForm(duplicateOf = id)) }
+    val makeRecurring = { id: String -> navController.navigate(Routes.RuleForm(fromTransaction = id)) }
+    val openRule = { id: String -> navController.navigate(Routes.RuleDetail(id)) }
+    val editRule = { id: String -> navController.navigate(Routes.RuleForm(id = id)) }
+    val confirmEdited = { ruleId: String, date: String -> navController.navigate(Routes.EntryForm(ruleId = ruleId, dueDate = date)) }
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
@@ -102,10 +116,36 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
             popExitTransition = { fadeOut(tween(160)) },
         ) {
             composable<Routes.Home> {
-                HomeRoute(onSetUpAccounts = { navController.navigateTopLevel(Routes.Accounts) })
+                HomeRoute(
+                    onSetUpAccounts = { navController.navigateTopLevel(Routes.Accounts) },
+                    onAddEntry = addEntry,
+                )
             }
             composable<Routes.Transactions> {
-                ComingSoonScreen(stringResource(R.string.nav_transactions), AppIcons.Transactions)
+                TransactionsRoute(onOpenEntry = openEntry, onAddEntry = addEntry)
+            }
+            composable<Routes.TransactionDetail> {
+                TransactionDetailRoute(
+                    onBack = { navController.popBackStack() },
+                    onEdit = editEntry,
+                    onDuplicate = duplicateEntry,
+                    onMakeRecurring = makeRecurring,
+                    onOpenRule = openRule,
+                )
+            }
+            composable<Routes.EntryForm> {
+                EntryFormRoute(
+                    onDone = { navController.popBackStack() },
+                    onDuplicate = { id ->
+                        navController.navigate(Routes.EntryForm(duplicateOf = id)) { popUpTo<Routes.EntryForm> { inclusive = true } }
+                    },
+                    onMakeRecurring = { id ->
+                        navController.navigate(Routes.RuleForm(fromTransaction = id)) { popUpTo<Routes.EntryForm> { inclusive = true } }
+                    },
+                    onOpenRule = { id ->
+                        navController.navigate(Routes.RuleDetail(id)) { popUpTo<Routes.EntryForm> { inclusive = true } }
+                    },
+                )
             }
             composable<Routes.Accounts> {
                 AccountsRoute(
@@ -122,12 +162,17 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
                 )
             }
             composable<Routes.More> {
-                MoreRoute(onOpenCategories = { navController.navigate(Routes.Categories) })
+                MoreRoute(
+                    onOpenCategories = { navController.navigate(Routes.Categories) },
+                    onOpenRecurring = { navController.navigate(Routes.Recurring) },
+                )
             }
             composable<Routes.AccountDetail> {
                 AccountDetailRoute(
                     onBack = { navController.popBackStack() },
                     onEdit = { navController.navigate(Routes.AccountForm(it)) },
+                    onAddEntry = { navController.navigate(Routes.EntryForm(accountId = it)) },
+                    onOpenEntry = openEntry,
                 )
             }
             composable<Routes.AccountForm> {
@@ -147,10 +192,31 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
                 BudgetDetailRoute(
                     onBack = { navController.popBackStack() },
                     onEdit = { navController.navigate(Routes.BudgetForm(it)) },
+                    onOpenEntry = openEntry,
                 )
             }
             composable<Routes.BudgetForm> {
                 BudgetFormRoute(onDone = { navController.popBackStack() })
+            }
+            composable<Routes.Recurring> {
+                RecurringRoute(
+                    onBack = { navController.popBackStack() },
+                    onOpenRule = openRule,
+                    onAddRule = { navController.navigate(Routes.RuleForm()) },
+                    onEditRule = editRule,
+                    onConfirmEdited = confirmEdited,
+                )
+            }
+            composable<Routes.RuleDetail> {
+                RuleDetailRoute(
+                    onBack = { navController.popBackStack() },
+                    onEditRule = editRule,
+                    onOpenEntry = openEntry,
+                    onConfirmEdited = confirmEdited,
+                )
+            }
+            composable<Routes.RuleForm> {
+                RuleFormRoute(onDone = { navController.popBackStack() })
             }
         }
     }

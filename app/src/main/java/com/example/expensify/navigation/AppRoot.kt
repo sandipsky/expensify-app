@@ -17,6 +17,8 @@ import com.example.expensify.feature.auth.data.Session
 import com.example.expensify.feature.auth.data.SessionRepository
 import com.example.expensify.feature.auth.ui.LoginRoute
 import com.example.expensify.feature.budgets.alerts.BudgetAlertsObserver
+import com.example.expensify.feature.recurring.runner.RecurringRunner
+import com.example.expensify.feature.recurring.work.RecurringWorkScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharedFlow
@@ -28,6 +30,8 @@ class AppViewModel @Inject constructor(
     session: SessionRepository,
     messages: Messages,
     budgetAlerts: BudgetAlertsObserver,
+    recurringRunner: RecurringRunner,
+    scheduler: RecurringWorkScheduler,
 ) : ViewModel() {
     val session: StateFlow<Session> = session.session
     val messages: SharedFlow<UiText> = messages.messages
@@ -35,6 +39,11 @@ class AppViewModel @Inject constructor(
     init {
         // The app-scoped observers (architecture §9) run while the shell is alive; each does nothing while logged out.
         viewModelScope.launch { budgetAlerts.run() }
+        viewModelScope.launch { recurringRunner.run() }
+        // The daily catch-up job runs while the app is closed; it is kept while someone is logged in.
+        viewModelScope.launch {
+            session.session.collect { if (it is Session.SignedIn) scheduler.schedule() else if (it is Session.SignedOut) scheduler.cancel() }
+        }
     }
 }
 

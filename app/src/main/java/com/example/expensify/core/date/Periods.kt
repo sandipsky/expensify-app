@@ -81,3 +81,30 @@ object Periods {
         return DateRange(range.start.minusDays(days), range.start.minusDays(1))
     }
 }
+
+/** The periods the transaction list offers (req LST-01), `ThisMonth` first as the default. */
+enum class PeriodPreset(val stored: String) {
+    ThisMonth("this_month"),
+    LastMonth("last_month"),
+    ThisYear("this_year"),
+    Custom("custom"),
+    ;
+
+    /** The range the preset stands for on `today`; `Custom` returns the given range, in order. */
+    fun range(today: LocalDate, custom: DateRange): DateRange = when (this) {
+        ThisMonth -> Periods.month(today)
+        LastMonth -> Periods.month(today, -1)
+        ThisYear -> Periods.year(today)
+        Custom -> Periods.ordered(custom.start, custom.end)
+    }
+
+    companion object {
+        /** The preset a range falls under on `today`, or `Custom` for any other range. */
+        fun of(range: DateRange, today: LocalDate): PeriodPreset = when (range) {
+            Periods.month(today) -> ThisMonth
+            Periods.month(today, -1) -> LastMonth
+            Periods.year(today) -> ThisYear
+            else -> Custom
+        }
+    }
+}

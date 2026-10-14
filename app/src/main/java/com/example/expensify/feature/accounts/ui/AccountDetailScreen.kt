@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -20,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,7 +48,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.expensify.R
 import com.example.expensify.core.money.Money
-import com.example.expensify.core.money.MoneyFormat
 import com.example.expensify.designsystem.components.AmountText
 import com.example.expensify.designsystem.components.AppCard
 import com.example.expensify.designsystem.components.Banner
@@ -74,6 +73,8 @@ import com.example.expensify.feature.accounts.domain.AccountRules
 fun AccountDetailRoute(
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
+    onAddEntry: (String) -> Unit,
+    onOpenEntry: (String) -> Unit,
     viewModel: AccountDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -89,6 +90,8 @@ fun AccountDetailRoute(
         state = state,
         onBack = onBack,
         onEdit = { onEdit(it.id) },
+        onAddEntry = { onAddEntry(it.id) },
+        onOpenEntry = onOpenEntry,
         onReconcile = viewModel::openReconcile,
         onArchive = viewModel::requestArchive,
         onRestore = viewModel::restore,
@@ -110,6 +113,8 @@ fun AccountDetailScreen(
     state: AccountDetailUiState,
     onBack: () -> Unit,
     onEdit: (Account) -> Unit,
+    onAddEntry: (Account) -> Unit,
+    onOpenEntry: (String) -> Unit,
     onReconcile: (Account) -> Unit,
     onArchive: (Account) -> Unit,
     onRestore: (Account) -> Unit,
@@ -173,6 +178,16 @@ fun AccountDetailScreen(
                 ),
             )
         },
+        floatingActionButton = {
+            // Add an entry preset to this account (CLAUDE.md, Account page).
+            if (account != null && !account.archived) {
+                ExtendedFloatingActionButton(
+                    onClick = { onAddEntry(account) },
+                    icon = { Icon(AppIcons.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.tx_add)) },
+                )
+            }
+        },
     ) { padding ->
         when (state) {
             AccountDetailUiState.Loading -> Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -191,17 +206,17 @@ fun AccountDetailScreen(
                 }
             }
             is AccountDetailUiState.Error -> ErrorState(state.message.asString(), Modifier.padding(padding))
-            is AccountDetailUiState.Content -> AccountDetailContent(state, Modifier.padding(padding))
+            is AccountDetailUiState.Content -> AccountDetailContent(state, Modifier.padding(padding), onOpenEntry)
         }
     }
 }
 
 @Composable
-private fun AccountDetailContent(state: AccountDetailUiState.Content, modifier: Modifier) {
+private fun AccountDetailContent(state: AccountDetailUiState.Content, modifier: Modifier, onOpenEntry: (String) -> Unit) {
     val account = state.account
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "header") {
@@ -304,7 +319,7 @@ private fun AccountDetailContent(state: AccountDetailUiState.Content, modifier: 
                     DayHeader(label = day.label.asString(), net = day.net)
                     day.rows.forEachIndexed { index, row ->
                         if (index > 0) HorizontalDivider(Modifier.padding(start = 68.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                        EntryRow(row)
+                        EntryRow(row, onClick = { onOpenEntry(row.id) })
                     }
                 }
             }
@@ -327,10 +342,7 @@ private fun AccountDetailPreview() {
                 days = emptyList(),
                 entryCount = 0,
             ),
-            onBack = {}, onEdit = {}, onReconcile = {}, onArchive = {}, onRestore = {}, onDelete = {},
+            onBack = {}, onEdit = {}, onAddEntry = {}, onOpenEntry = {}, onReconcile = {}, onArchive = {}, onRestore = {}, onDelete = {},
         )
     }
 }
-
-@Suppress("unused")
-private val previewSymbol = MoneyFormat.SYMBOL

@@ -75,6 +75,7 @@ import com.example.expensify.feature.budgets.domain.Budget
 fun BudgetDetailRoute(
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
+    onOpenEntry: (String) -> Unit,
     viewModel: BudgetDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -90,6 +91,7 @@ fun BudgetDetailRoute(
         state = state,
         onBack = onBack,
         onEdit = { onEdit(it.id) },
+        onOpenEntry = onOpenEntry,
         onPause = viewModel::pause,
         onResume = viewModel::resume,
         onDelete = viewModel::requestDelete,
@@ -105,6 +107,7 @@ fun BudgetDetailScreen(
     state: BudgetDetailUiState,
     onBack: () -> Unit,
     onEdit: (Budget) -> Unit,
+    onOpenEntry: (String) -> Unit,
     onPause: (Budget) -> Unit,
     onResume: (Budget) -> Unit,
     onDelete: (Budget) -> Unit,
@@ -172,7 +175,7 @@ fun BudgetDetailScreen(
                 }
             }
             is BudgetDetailUiState.Error -> ErrorState(state.message.asString(), Modifier.padding(padding))
-            is BudgetDetailUiState.Content -> BudgetDetailContent(state, Modifier.padding(padding), onSelectPeriod, onShowMore)
+            is BudgetDetailUiState.Content -> BudgetDetailContent(state, Modifier.padding(padding), onSelectPeriod, onShowMore, onOpenEntry)
         }
     }
 }
@@ -184,6 +187,7 @@ private fun BudgetDetailContent(
     modifier: Modifier,
     onSelectPeriod: (Int) -> Unit,
     onShowMore: () -> Unit,
+    onOpenEntry: (String) -> Unit,
 ) {
     val budget = state.budget
     LazyColumn(
@@ -271,7 +275,7 @@ private fun BudgetDetailContent(
                     AppCard(contentPadding = PaddingValues(vertical = 4.dp)) {
                         state.rows.forEachIndexed { index, row ->
                             if (index > 0) HorizontalDivider(Modifier.padding(start = 68.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                            EntryRow(row)
+                            EntryRow(row, onClick = { onOpenEntry(row.id) })
                         }
                     }
                 }
@@ -395,7 +399,7 @@ private fun BudgetDetailPreview() {
                 hiddenCount = 0,
                 spendingError = null,
             ),
-            onBack = {}, onEdit = {}, onPause = {}, onResume = {}, onDelete = {}, onSelectPeriod = {}, onShowMore = {},
+            onBack = {}, onEdit = {}, onOpenEntry = {}, onPause = {}, onResume = {}, onDelete = {}, onSelectPeriod = {}, onShowMore = {},
         )
     }
 }

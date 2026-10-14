@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Checkroom
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Factory
 import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Flight
 import androidx.compose.material.icons.rounded.Group
@@ -57,6 +59,8 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RequestQuote
 import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.ShoppingBag
@@ -109,6 +113,11 @@ object AppIcons {
     val Resume = Icons.Rounded.PlayArrow
     val Check = Icons.Rounded.Check
     val ChevronRight = Icons.Rounded.ChevronRight
+    val Search = Icons.Rounded.Search
+    val Filter = Icons.Rounded.FilterList
+    val Calendar = Icons.Rounded.CalendarMonth
+    val Duplicate = Icons.Rounded.ContentCopy
+    val Skip = Icons.Rounded.SkipNext
 
     // Budget states, always beside their label (req NFR-06).
     val OnTrack = Icons.Rounded.ThumbUp

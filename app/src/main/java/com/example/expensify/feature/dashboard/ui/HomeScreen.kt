@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,15 +45,15 @@ class HomeViewModel @Inject constructor(session: SessionRepository) : ViewModel(
 }
 
 @Composable
-fun HomeRoute(onSetUpAccounts: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeRoute(onSetUpAccounts: () -> Unit, onAddEntry: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
     val session by viewModel.session.collectAsStateWithLifecycle()
     val name = (session as? Session.SignedIn)?.name?.substringBefore(' ').orEmpty()
-    HomeScreen(name = name, onSetUpAccounts = onSetUpAccounts)
+    HomeScreen(name = name, onSetUpAccounts = onSetUpAccounts, onAddEntry = onAddEntry)
 }
 
-/** The dashboard's shell: a greeting and, until the cards exist, the way to get started. */
+/** The dashboard's shell: a greeting, the FAB that logs an entry, and, until the cards exist, the way to get started. */
 @Composable
-fun HomeScreen(name: String, onSetUpAccounts: () -> Unit) {
+fun HomeScreen(name: String, onSetUpAccounts: () -> Unit, onAddEntry: () -> Unit) {
     val hour = remember { LocalTime.now().hour }
     val greeting = when {
         hour < 12 -> R.string.home_greeting_morning
@@ -61,6 +63,13 @@ fun HomeScreen(name: String, onSetUpAccounts: () -> Unit) {
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = onAddEntry,
+                icon = { Icon(AppIcons.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.tx_add)) },
+            )
+        },
     ) { padding ->
         Column(
             Modifier
@@ -79,6 +88,7 @@ fun HomeScreen(name: String, onSetUpAccounts: () -> Unit) {
                     action = { Button(onClick = onSetUpAccounts) { Text(stringResource(R.string.home_empty_action)) } },
                 )
             }
+            Spacer(Modifier.height(80.dp))
         }
     }
 }
@@ -86,5 +96,5 @@ fun HomeScreen(name: String, onSetUpAccounts: () -> Unit) {
 @PreviewLightDark
 @Composable
 private fun HomePreview() {
-    ExpensifyTheme { HomeScreen(name = "Sita", onSetUpAccounts = {}) }
+    ExpensifyTheme { HomeScreen(name = "Sita", onSetUpAccounts = {}, onAddEntry = {}) }
 }
