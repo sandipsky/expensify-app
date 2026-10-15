@@ -387,7 +387,7 @@ object Routes {
 | Forms | Full-screen destinations; they return through the listener, not a result API. The snackbar after Save is raised by the form's ViewModel before `popBackStack` and shown by the scaffold's host |
 | Pickers | `ModalBottomSheet` inside the form screen, not destinations |
 | Confirmations | `AlertDialog` driven by ViewModel state (`pendingDelete: Transaction?`) |
-| Deep links | `expensify://transactions/{id}`, `expensify://budgets/{id}` for notifications |
+| Deep links | `expensify://budgets/{id}`, `expensify://recurring`, `expensify://transactions` are what alerts carry (`AlertLinks`). A system notification opens `MainActivity` (`singleTop`) with the link; the activity parses it and hands an `AlertTarget` to `AlertNavigator`, a buffered channel the signed-in shell collects and navigates on, so a cold start waits for the shell. The snackbar's View and the alerts list go through the same channel |
 | Predictive back | `android:enableOnBackInvokedCallback="true"`; no custom back handling except unsaved-form guards |
 
 ## 9. Background work and notifications
@@ -397,16 +397,21 @@ Mirrors req §12 while the app is open, and adds what a phone can do while it is
 | Job | Foreground (app-scoped observer, started on `SignedIn`) | Closed app |
 | --- | --- | --- |
 | Recurring runner (REC-06) | Observes `rules` + `accounts` + `Today`; for each active auto rule computes due dates ≤ today; calls `addOccurrences` in chunks of 100, oldest first; ignores `Stale` | `RecurringCatchUpWorker`: periodic WorkManager job (daily, flex 1 h, network required) running the same `RecurringService` |
-| Budget alerts (NTF-01) | Observes `budgets` + this period's expenses + `Today`; thresholds crossed → `recordAlert` transaction → in-app alert + system notification if `budgetAlerts` and permission | None (needs the period's entries; evaluated on next open or by the catch-up worker after it adds entries) |
-| Bill reminders (NTF-03) | Observes `rules` (ask-first) + `Today`; day-before and waiting reminders, deduplicated in `bill_reminders_json` | `ReminderWorker` scheduled for 09:00 the day before each next due date |
-| Daily reminder (NTF-02) | Timer at `reminderTime`; checks one `inRange(today, today)` query for a non-recurring entry | `DailyReminderWorker`: one-time work at the next `reminderTime`, re-enqueues itself |
+| Budget alerts (NTF-01) | `BudgetAlertsObserver`: observes `budgets` + this period's expenses + `Today`; thresholds crossed → `recordAlert` transaction → `Notifier.deliver` | None (needs the period's entries; evaluated on next open or by the catch-up worker after it adds entries) |
+| Bill reminders (NTF-03) | `RecurringRemindersObserver`: observes `rules` + `accounts` + `categories` + `Today`; day-before and waiting reminders, deduplicated in `bill_reminders_json` | `ReminderWorker` (`kind = bills`): daily periodic work first due at the next 09:00, re-aimed on every sign-in and settings change |
+| Daily reminder (NTF-02) | `DailyReminderObserver`: a minute tick plus the app coming to the front; one `inRange(today, today)` query while the switch is on; a non-recurring entry counts as logged | `ReminderWorker` (`kind = daily`): daily periodic work first due at the next `reminderTime`; reads today's entries from the server (`fetchInRange`) so a web entry counts |
 
-- `RecurringService` (a plain class) holds the logic; the observer and the worker both call it.
-- Workers are `@HiltWorker`s; they bail out when `Session` is not `SignedIn`.
-- Notification channels: `budget_alerts`, `bill_reminders`, `daily_reminder`; `POST_NOTIFICATIONS`
-  requested from the Notifications settings screen, never at launch.
-- The in-app alert list (bell) is `DeviceState.alerts_json` through `AlertStore`
-  (`StateFlow<List<AppAlert>>`), newest first, ≤ 50, ≤ 30 days, cleared on a different login.
+- `RecurringCatchUp` and `ReminderChecks` (plain classes) hold the logic; the observers and the workers both call them.
+- Workers are `@HiltWorker`s; they bail out when `Session` is not `SignedIn`. `ReminderScheduler.sync(prefs)`
+  keeps the two reminder jobs in step with the notification settings (NTF-04) and cancels them on sign-out.
+- `Notifier.deliver(AlertInput)` (the web's `useNotifier`): adds the alert to `AlertStore`; while the app is on
+  screen (`AppVisibility`) shows a long snackbar with a View action, otherwise posts a system notification
+  through `SystemNotifier` when the phone allows it (NTF-05). Without permission the bell's badge is the signal.
+- Notification channels: `budget_alerts`, `bill_reminders`, `daily_reminder`, created in `ExpensifyApp`;
+  `POST_NOTIFICATIONS` requested from the Notifications settings screen, never at launch.
+- The in-app alert list (bell on Home → `Routes.Alerts`) is `DeviceState.alerts_json` through `AlertStore`
+  (`Flow<List<AppAlert>>`, JSON via kotlinx.serialization), newest first, ≤ 50, ≤ 30 days; `AlertStore.claim(uid)`
+  on sign-in clears alerts and reminder state kept for a different user (NTF-07).
 
 ## 10. Design system (implementation view)
 

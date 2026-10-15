@@ -22,6 +22,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.snapshots
 import java.time.LocalDate
 import javax.inject.Inject
@@ -43,6 +44,13 @@ interface TransactionRepository {
      * later entry (req RPT-07, BR-17). Still one filter on `date` (req §9.7).
      */
     fun fromDate(start: LocalDate): Flow<List<Transaction>>
+
+    /**
+     * The range's entries read from the server once, for a check while the
+     * app is closed: an entry logged on the web counts. The same one filter
+     * on `date` as `inRange` (req §9.7).
+     */
+    suspend fun fetchInRange(range: DateRange): List<Transaction>
 
     /** Entries touching the account, on either side of a transfer, newest first, live (req ACC-09). */
     fun forAccount(accountId: String): Flow<List<Transaction>>
@@ -101,6 +109,16 @@ class FirestoreTransactionRepository @Inject constructor(
     override fun fromDate(start: LocalDate): Flow<List<Transaction>> = live { collection ->
         collection.whereGreaterThanOrEqualTo("date", start.ymd())
     }
+
+    override suspend fun fetchInRange(range: DateRange): List<Transaction> =
+        paths.collection(UserCollection.Transactions)
+            .whereGreaterThanOrEqualTo("date", range.start.ymd())
+            .whereLessThanOrEqualTo("date", range.end.ymd())
+            .get(Source.SERVER)
+            .await()
+            .documents
+            .map { it.toTransaction() }
+            .sortedWith(TransactionRules.newestFirst)
 
     override fun forAccount(accountId: String): Flow<List<Transaction>> = live { collection ->
         collection.whereArrayContains("accountIds", accountId)

@@ -28,16 +28,27 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+        <!-- singleTop: a tapped notification reaches the running activity through onNewIntent instead of a second copy. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.Expensify"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Where alerts lead (architecture §8): expensify://budgets/{id}, expensify://recurring, expensify://transactions. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="expensify" />
             </intent-filter>
         </activity>
     </application>

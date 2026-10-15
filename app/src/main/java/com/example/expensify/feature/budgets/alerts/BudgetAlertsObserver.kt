@@ -3,8 +3,6 @@ package com.example.expensify.feature.budgets.alerts
 import com.example.expensify.R
 import com.example.expensify.core.date.Today
 import com.example.expensify.core.money.MoneyFormat
-import com.example.expensify.core.ui.Messages
-import com.example.expensify.core.ui.UiText
 import com.example.expensify.core.ui.res
 import com.example.expensify.feature.auth.data.AuthRepository
 import com.example.expensify.feature.budgets.data.BudgetRepository
@@ -14,6 +12,11 @@ import com.example.expensify.feature.budgets.domain.BudgetProgress
 import com.example.expensify.feature.budgets.domain.BudgetRules
 import com.example.expensify.feature.budgets.domain.BudgetState
 import com.example.expensify.feature.budgets.ui.BudgetLabels
+import com.example.expensify.feature.notifications.AlertInput
+import com.example.expensify.feature.notifications.Notifier
+import com.example.expensify.feature.notifications.domain.AlertKind
+import com.example.expensify.feature.notifications.domain.AlertLinks
+import com.example.expensify.feature.notifications.domain.AlertTone
 import com.example.expensify.feature.transactions.data.TransactionRepository
 import com.example.expensify.feature.transactions.domain.Transaction
 import java.time.LocalDate
@@ -31,10 +34,12 @@ import kotlinx.coroutines.flow.retryWhen
 
 /**
  * Budget alerts while the app is open (req NTF-01, BUD-07), the port of
- * BudgetAlerts.tsx: a message when a budget reaches 80 % or 100 % of its
+ * BudgetAlerts.tsx: an alert when a budget reaches 80 % or 100 % of its
  * limit, once per threshold per period, unless turned off in Settings. The
  * budget's `lastAlert` records what was shown, so another device or a
- * restart doesn't show it again. Runs for as long as the app shell is alive.
+ * restart doesn't show it again. Each alert goes through the `Notifier`: into
+ * the list behind the bell, and on screen or as a system notification (req
+ * NTF-05). Runs for as long as the app shell is alive.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
@@ -43,7 +48,7 @@ class BudgetAlertsObserver @Inject constructor(
     private val transactions: TransactionRepository,
     private val auth: AuthRepository,
     private val today: Today,
-    private val messages: Messages,
+    private val notifier: Notifier,
 ) {
     private data class Snapshot(val enabled: Boolean, val budgets: List<Budget>, val txs: List<Transaction>, val today: LocalDate)
 
@@ -75,28 +80,37 @@ class BudgetAlertsObserver @Inject constructor(
             val key = "${budget.id}|${progress.result.range.start}|$threshold"
             if (!shown.add(key)) continue
 
-            messages.show(message(budget, progress, threshold))
             try {
                 budgets.recordAlert(budget.id, BudgetAlert(progress.result.range.start, threshold))
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                // Offline or refused: the alert was shown once here; the next run re-reads `lastAlert`.
+                // Offline or refused: the alert is shown once here; the next run re-reads `lastAlert`.
             }
+            notifier.deliver(alert(budget, progress, threshold, key))
         }
     }
 
-    private fun message(budget: Budget, progress: BudgetProgress, threshold: Int): UiText {
+    /** "Food: over budget · Rs 120.00 over · 5 days left", or "Food: 86% used · Rs 70.00 left · 5 days left". */
+    private fun alert(budget: Budget, progress: BudgetProgress, threshold: Int, key: String): AlertInput {
         val result = progress.result
         val left = BudgetLabels.daysLeft(progress.daysLeft)
-        return if (result.state == BudgetState.Over) {
-            if (result.remaining.isNegative) {
-                res(R.string.budget_alert_over, budget.name, MoneyFormat.full(-result.remaining), left)
+        val over = result.state == BudgetState.Over
+        return AlertInput(
+            id = "budget|$key",
+            kind = AlertKind.Budget,
+            tone = if (over) AlertTone.Error else AlertTone.Warn,
+            title = if (over) {
+                res(R.string.budget_alert_title_over, budget.name)
             } else {
-                res(R.string.budget_alert_over_nothing_left, budget.name, left)
-            }
-        } else {
-            res(R.string.budget_alert_warning, budget.name, result.percent ?: threshold, MoneyFormat.full(result.remaining), left)
-        }
+                res(R.string.budget_alert_title_used, budget.name, result.percent ?: threshold)
+            },
+            message = when {
+                !over -> res(R.string.budget_alert_message_left, MoneyFormat.full(result.remaining), left)
+                result.remaining.isNegative -> res(R.string.budget_alert_message_over, MoneyFormat.full(-result.remaining), left)
+                else -> res(R.string.budget_alert_message_nothing_left, left)
+            },
+            link = AlertLinks.budget(budget.id),
+        )
     }
 }

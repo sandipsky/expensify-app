@@ -16,6 +16,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -40,6 +41,8 @@ import com.example.expensify.feature.budgets.ui.BudgetsRoute
 import com.example.expensify.feature.categories.ui.CategoriesRoute
 import com.example.expensify.feature.categories.ui.CategoryFormRoute
 import com.example.expensify.feature.dashboard.ui.HomeRoute
+import com.example.expensify.feature.notifications.domain.AlertTarget
+import com.example.expensify.feature.notifications.ui.AlertsRoute
 import com.example.expensify.feature.recurring.ui.RecurringRoute
 import com.example.expensify.feature.recurring.ui.RuleDetailRoute
 import com.example.expensify.feature.recurring.ui.RuleFormRoute
@@ -61,12 +64,13 @@ import com.example.expensify.feature.transactions.ui.EntryFormRoute
 import com.example.expensify.feature.transactions.ui.TransactionDetailRoute
 import com.example.expensify.feature.transactions.ui.TransactionsRoute
 import kotlin.reflect.KClass
+import kotlinx.coroutines.flow.Flow
 
 private class TopLevel(val route: Any, val routeClass: KClass<*>, val labelRes: Int, val icon: ImageVector)
 
 /** The bottom bar: the web's sidebar, phone first (CLAUDE.md, Information architecture). */
 private val TOP_LEVEL = listOf(
-    TopLevel(Routes.Home, Routes.Home::class, R.string.nav_home, AppIcons.Home),
+    TopLevel(Routes.Home(), Routes.Home::class, R.string.nav_home, AppIcons.Home),
     TopLevel(Routes.Transactions(), Routes.Transactions::class, R.string.nav_transactions, AppIcons.Transactions),
     TopLevel(Routes.Accounts, Routes.Accounts::class, R.string.nav_accounts, AppIcons.Accounts),
     TopLevel(Routes.Budgets, Routes.Budgets::class, R.string.nav_budgets, AppIcons.Budgets),
@@ -81,7 +85,7 @@ private fun NavController.navigateTopLevel(route: Any) = navigate(route) {
     restoreState = true
 }
 
-/** The list on the entries behind a report figure (req RPT-02), the way the web links to `/transactions?…`. */
+/** The list on the entries behind a figure (req DSH-04, RPT-02), the way the web links to `/transactions?…`. */
 private fun DrillDown.toRoute() = Routes.Transactions(
     from = range.start.ymd(),
     to = range.end.ymd(),
@@ -93,10 +97,12 @@ private fun DrillDown.toRoute() = Routes.Transactions(
 /**
  * The signed-in shell. The outer Scaffold owns the bottom bar, the snackbar
  * host and the bottom insets; each screen owns its top bar and the top
- * insets, so nothing is padded twice.
+ * insets, so nothing is padded twice. `alertRequests` carries where an
+ * alert asks to go: a tapped notification, a snackbar's View, a row in the
+ * alerts list (req NTF-05).
  */
 @Composable
-fun MainNavHost(snackbarHost: SnackbarHostState) {
+fun MainNavHost(snackbarHost: SnackbarHostState, alertRequests: Flow<AlertTarget>) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
@@ -111,7 +117,19 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
     val editRule = { id: String -> navController.navigate(Routes.RuleForm(id = id)) }
     val confirmEdited = { ruleId: String, date: String -> navController.navigate(Routes.EntryForm(ruleId = ruleId, dueDate = date)) }
     val openTransactions = { drill: DrillDown -> navController.navigate(drill.toRoute()) }
+    val openBudget = { id: String -> navController.navigate(Routes.BudgetDetail(id)) }
+    val openAccount = { id: String -> navController.navigate(Routes.AccountDetail(id)) }
     val back = { navController.popBackStack(); Unit }
+
+    LaunchedEffect(navController) {
+        alertRequests.collect { target ->
+            when (target) {
+                is AlertTarget.Budget -> openBudget(target.id)
+                AlertTarget.Recurring -> navController.navigate(Routes.Recurring)
+                AlertTarget.Transactions -> navController.navigateTopLevel(Routes.Transactions())
+            }
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
@@ -133,7 +151,7 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.Home,
+            startDestination = Routes.Home(),
             modifier = Modifier.padding(padding),
             enterTransition = { fadeIn(tween(220)) },
             exitTransition = { fadeOut(tween(160)) },
@@ -142,8 +160,32 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
         ) {
             composable<Routes.Home> {
                 HomeRoute(
-                    onSetUpAccounts = { navController.navigateTopLevel(Routes.Accounts) },
+                    onOpenTransactions = openTransactions,
+                    onOpenEntry = openEntry,
+                    onEditEntry = editEntry,
                     onAddEntry = addEntry,
+                    onOpenAccounts = { navController.navigateTopLevel(Routes.Accounts) },
+                    onOpenAccount = openAccount,
+                    onAddAccount = { navController.navigate(Routes.AccountForm()) },
+                    onOpenBudgets = { navController.navigateTopLevel(Routes.Budgets) },
+                    onOpenBudget = openBudget,
+                    onAddBudget = { navController.navigate(Routes.BudgetForm()) },
+                    onOpenRecurring = { navController.navigate(Routes.Recurring) },
+                    onOpenRule = openRule,
+                    onOpenAlerts = { navController.navigate(Routes.Alerts) },
+                )
+            }
+            composable<Routes.Alerts> {
+                AlertsRoute(
+                    onBack = back,
+                    onOpen = { target ->
+                        when (target) {
+                            is AlertTarget.Budget -> openBudget(target.id)
+                            AlertTarget.Recurring -> navController.navigate(Routes.Recurring)
+                            AlertTarget.Transactions -> navController.navigateTopLevel(Routes.Transactions())
+                        }
+                    },
+                    onOpenSettings = { navController.navigate(Routes.Settings) },
                 )
             }
             composable<Routes.Transactions> {
@@ -174,14 +216,14 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
             }
             composable<Routes.Accounts> {
                 AccountsRoute(
-                    onOpenAccount = { navController.navigate(Routes.AccountDetail(it)) },
+                    onOpenAccount = openAccount,
                     onAddAccount = { navController.navigate(Routes.AccountForm()) },
                     onEditAccount = { navController.navigate(Routes.AccountForm(it)) },
                 )
             }
             composable<Routes.Budgets> {
                 BudgetsRoute(
-                    onOpenBudget = { navController.navigate(Routes.BudgetDetail(it)) },
+                    onOpenBudget = openBudget,
                     onAddBudget = { navController.navigate(Routes.BudgetForm()) },
                     onEditBudget = { navController.navigate(Routes.BudgetForm(it)) },
                 )
@@ -273,12 +315,12 @@ fun MainNavHost(snackbarHost: SnackbarHostState) {
                 CategoryTrendsRoute(onBack = back, onOpenTransactions = openTransactions)
             }
             composable<Routes.AccountsReport> {
-                AccountsReportRoute(onBack = back, onOpenAccount = { navController.navigate(Routes.AccountDetail(it)) })
+                AccountsReportRoute(onBack = back, onOpenAccount = openAccount)
             }
             composable<Routes.BudgetReport> {
                 BudgetReportRoute(
                     onBack = back,
-                    onOpenBudget = { navController.navigate(Routes.BudgetDetail(it)) },
+                    onOpenBudget = openBudget,
                     onGoToBudgets = { navController.navigateTopLevel(Routes.Budgets) },
                     onOpenTransactions = openTransactions,
                 )

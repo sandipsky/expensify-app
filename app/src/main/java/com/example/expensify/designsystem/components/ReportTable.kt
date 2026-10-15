@@ -184,6 +184,7 @@ fun TableMoneyCell(
     kind: AmountKind = AmountKind.Neutral,
     sign: Sign = Sign.Auto,
     emphasis: Boolean = false,
+    masked: Boolean = false,
 ) {
     AmountText(
         money = money,
@@ -191,6 +192,7 @@ fun TableMoneyCell(
         sign = sign,
         modifier = modifier.fillMaxWidth().padding(end = 8.dp),
         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (emphasis) FontWeight.Medium else FontWeight.Normal),
+        masked = masked,
     )
 }
 

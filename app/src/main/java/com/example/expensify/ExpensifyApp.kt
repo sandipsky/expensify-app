@@ -3,6 +3,7 @@ package com.example.expensify
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.example.expensify.feature.notifications.system.NotificationChannels
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import dagger.hilt.android.HiltAndroidApp
@@ -15,7 +16,7 @@ class ExpensifyApp : Application(), Configuration.Provider {
     lateinit var workerFactory: HiltWorkerFactory
 
     // WorkManager's default initializer is removed in the manifest, so its
-    // workers can be built by Hilt (the recurring catch-up job).
+    // workers can be built by Hilt (the recurring catch-up and reminder jobs).
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
 
@@ -35,6 +36,8 @@ class ExpensifyApp : Application(), Configuration.Provider {
                     .build(),
             )
         }
+        // The channels alerts post to; the phone's settings let each be muted on its own (architecture §9).
+        NotificationChannels.create(this)
     }
 
     companion object {

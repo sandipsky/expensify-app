@@ -40,7 +40,8 @@ data class DonutSegment(val key: String, val label: String, val value: Money, va
 /**
  * A ring split by value, with a slot in the middle for the total and a
  * legend under it listing each slice with its share and amount. Tapping a
- * slice or its legend row opens it when the chart is clickable.
+ * slice or its legend row opens it when the chart is clickable. A caller
+ * that lists the slices its own way turns the legend off.
  */
 @Composable
 fun DonutChart(
@@ -51,6 +52,7 @@ fun DonutChart(
     thickness: Dp = 22.dp,
     format: (Money) -> String = { MoneyFormat.full(it) },
     onSegmentClick: ((DonutSegment) -> Unit)? = null,
+    legend: Boolean = true,
     center: @Composable () -> Unit = {},
 ) {
     val total = segments.sumOf { it.value.paisa.coerceAtLeast(0) }
@@ -106,6 +108,8 @@ fun DonutChart(
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(thickness + 8.dp)) { center() }
         }
+
+        if (!legend) return@Column
 
         Spacer(Modifier.size(12.dp))
 

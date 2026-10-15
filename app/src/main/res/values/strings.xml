@@ -304,10 +304,12 @@
     <string name="budget_added">Budget added · %1$s</string>
     <string name="budget_updated">Budget updated · %1$s</string>
 
-    <!-- Budget alerts (NTF-01) -->
-    <string name="budget_alert_over">%1$s: over budget · %2$s over · %3$s</string>
-    <string name="budget_alert_over_nothing_left">%1$s: over budget · Nothing left to spend · %2$s</string>
-    <string name="budget_alert_warning">%1$s: %2$d%% used · %3$s left · %4$s</string>
+    <!-- Budget alerts (NTF-01); wording from BudgetAlerts.tsx -->
+    <string name="budget_alert_title_over">%1$s: over budget</string>
+    <string name="budget_alert_title_used">%1$s: %2$d%% used</string>
+    <string name="budget_alert_message_over">%1$s over · %2$s</string>
+    <string name="budget_alert_message_nothing_left">Nothing left to spend · %1$s</string>
+    <string name="budget_alert_message_left">%1$s left · %2$s</string>
 
     <!-- Shared -->
     <string name="action_ok">OK</string>
@@ -863,4 +865,72 @@
     <string name="settings_type_to_confirm">Type %1$s to confirm</string>
     <string name="settings_deleting">Deleting…</string>
     <string name="settings_account_deleted">Your account was deleted.</string>
+
+    <!-- Dashboard (DSH-01…DSH-12); wording from the dashboard components -->
+    <string name="dashboard_hide_amounts">Hide amounts</string>
+    <string name="dashboard_show_amounts">Show amounts</string>
+    <string name="dashboard_alerts_bell">Alerts</string>
+    <string name="dashboard_alerts_bell_new">Alerts, %1$d new</string>
+    <string name="dashboard_change_with_percent">%1$s (%2$s)</string>
+    <string name="dashboard_points">%1$s pts</string>
+    <string name="dashboard_change_up">up from the previous period</string>
+    <string name="dashboard_change_down">down from the previous period</string>
+    <string name="dashboard_change_same">from the previous period</string>
+    <string name="dashboard_balances">Balances</string>
+    <string name="dashboard_see_all">See all</string>
+    <string name="dashboard_add_account">Add an account</string>
+    <string name="dashboard_spending_title">Spending by category</string>
+    <string name="dashboard_spending_description">Spending by category, %1$s</string>
+    <string name="dashboard_spending_empty_title">No expenses this period</string>
+    <string name="dashboard_spending_empty_message">Add an expense to see where the money goes.</string>
+    <string name="dashboard_add_expense">Add expense</string>
+    <string name="dashboard_show_table">Table</string>
+    <string name="dashboard_show_list">List</string>
+    <string name="dashboard_col_amount">Amount</string>
+    <string name="dashboard_set_budget">Set a budget</string>
+    <string name="dashboard_trend_description">Income and expense, last %1$d periods</string>
+    <string name="dashboard_trend_empty_title">No trend yet</string>
+    <string name="dashboard_trend_empty_message">Log a few entries to see your trend.</string>
+    <string name="dashboard_recent_title">Recent transactions</string>
+    <string name="dashboard_recent_empty_title">Nothing logged this period</string>
+    <string name="dashboard_recent_empty_message">Add a transaction and it shows up here.</string>
+    <string name="dashboard_add_first_expense">Add your first expense</string>
+    <string name="dashboard_entry_actions">Actions for %1$s</string>
+    <string name="dashboard_upcoming_title">Upcoming</string>
+    <string name="dashboard_due_on">Due %1$s</string>
+    <string name="dashboard_empty_title">Nothing logged in %1$s</string>
+    <string name="dashboard_empty_message">Add a transaction to see where your money goes, or pick another period above.</string>
+    <string name="join_dot">%1$s · %2$s</string>
+
+    <!-- Alerts (NTF-05, NTF-06); wording from AlertsPanel.tsx and useNotifier.ts -->
+    <string name="alerts_title">Alerts</string>
+    <string name="alerts_clear_all">Clear all</string>
+    <string name="alerts_remove">Remove %1$s</string>
+    <string name="alerts_new">New</string>
+    <string name="alerts_settings">Notification settings</string>
+    <string name="alerts_empty_title">No alerts yet</string>
+    <string name="alerts_empty_message">Budget alerts and reminders show up here, so you can catch up on anything you missed.</string>
+    <string name="alerts_just_now">Just now</string>
+    <string name="alert_snackbar">%1$s · %2$s</string>
+    <string name="alert_view">View</string>
+
+    <!-- Reminders (NTF-02, NTF-03); wording from DailyReminder.tsx and notification.labels.ts -->
+    <string name="reminder_daily_title">Time to log today\'s spending</string>
+    <string name="reminder_daily_message">Nothing is logged for today yet. Adding it takes a few seconds.</string>
+    <string name="reminder_upcoming_title">%1$s is due tomorrow</string>
+    <string name="reminder_upcoming_message">%1$s · %2$s. You\'ll be asked to confirm it.</string>
+    <string name="reminder_waiting_many_title">%1$s: %2$s waiting</string>
+    <string name="reminder_waiting_many_message">%1$s each · %2$s. Confirm or skip them.</string>
+    <string name="reminder_due_today_title">%1$s is due today</string>
+    <string name="reminder_due_today_message">%1$s · %2$s. Confirm or skip it.</string>
+    <string name="reminder_waiting_title">%1$s is waiting</string>
+    <string name="reminder_waiting_message">Due %1$s · %2$s. Confirm or skip it.</string>
+
+    <!-- Notification channels (architecture §9) -->
+    <string name="channel_budget_alerts">Budget alerts</string>
+    <string name="channel_budget_alerts_description" formatted="false">When a budget reaches 80% or 100% of its limit.</string>
+    <string name="channel_bill_reminders">Recurring reminders</string>
+    <string name="channel_bill_reminders_description">The day before and on the day an ask-first recurring entry is due.</string>
+    <string name="channel_daily_reminder">Daily reminder</string>
+    <string name="channel_daily_reminder_description">A reminder to log your spending at the time you choose.</string>
 </resources>

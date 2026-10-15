@@ -3,6 +3,7 @@ package com.example.expensify.designsystem.icons
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Help
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.Undo
@@ -11,6 +12,8 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Apartment
 import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Balance
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Bolt
@@ -51,6 +54,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.NorthEast
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Pause
@@ -68,6 +72,7 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SouthWest
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.ShoppingBag
@@ -75,6 +80,7 @@ import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.TableChart
 import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material.icons.rounded.Train
 import androidx.compose.material.icons.rounded.Tune
@@ -147,6 +153,15 @@ object AppIcons {
     val Schedule = Icons.Rounded.Schedule
     val OpenInNew = Icons.AutoMirrored.Rounded.OpenInNew
     val Email = Icons.Rounded.Email
+
+    // Dashboard and alerts chrome: the arrows the summary tiles draw, always beside their text (req NFR-06).
+    val ArrowUp = Icons.Rounded.ArrowUpward
+    val ArrowDown = Icons.Rounded.ArrowDownward
+    val IncomeArrow = Icons.Rounded.SouthWest
+    val ExpenseArrow = Icons.Rounded.NorthEast
+    val Table = Icons.Rounded.TableChart
+    val ListView = Icons.AutoMirrored.Rounded.List
+    val BudgetAlert = Icons.Rounded.DonutLarge
 }
 
 /**

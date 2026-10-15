@@ -44,14 +44,14 @@ one change) and deployed with `npm run deploy:rules` there, then used here. Neve
 Phase 0 and the first slices of phases 1–3 are built and verified on the `Pixel_10` AVD against
 the emulators: the design system (`designsystem/`), the navigation shell with the bottom bar,
 Hilt and Firebase wiring, `core/` (Money, Periods, Today, AppError, UiText, Messages) with unit
-tests, **Login** (no signup yet; the profile is read live for preferences), an empty **Home**,
-the full **Accounts** feature (list with total and archived section, add/edit form, account
+tests, **Login** (no signup yet; the profile is read live for preferences), the full **Home**
+dashboard (below), the full **Accounts** feature (list with total and archived section, add/edit form, account
 page with its entries grouped by day, reconcile sheet, archive/restore, delete), the full
 **Categories** feature under More (expense/income tabs, add/edit with the 48-icon picker and
 palette color, archive/restore, delete, "Add default categories"), and the full **Budgets**
 feature (list with live meters, add/edit form, budget page with results by period and the
 expenses behind them, pause/resume, delete, and the foreground budget-alerts observer that
-records `lastAlert` and shows a snackbar; system notifications and the bell come with phase 3).
+records `lastAlert` and delivers the alert through the notifier).
 The full **Transactions** feature is built (list with period chips, search, filters sheet and
 chips, totals strip, day groups; add/edit/duplicate form with the category grid, account picker,
 date chips and "Save and add another"; entry page with Make recurring / Open recurring rule;
@@ -71,9 +71,20 @@ password, theme (applied at once and cached in DataStore for the first frame), t
 switches with the reminder time and the phone's notification permission, delete all transactions
 with the count, and delete account with typed DELETE + password; `AuthRepository` now has the
 web's `updateProfile`/`updatePreferences`/`changeEmail`/`changePassword`/`deleteAccount` and the
-profile-load repairs (`syncLogin`). The dashboard is still a greeting with the Add FAB; the alerts
-bell and system notifications are still phase 3. `icon.png` (512 px, violet receipt) is still
-only the source art for a launcher icon.
+profile-load repairs (`syncLogin`). The **Dashboard** is built (`feature/dashboard/`): the period
+in `Routes.Home`'s arguments with This month / Last month / Custom chips pinned on scroll, the
+privacy eye (masked on each open, DSH-11), the alerts bell with its unread badge, summary tiles
+with their change from the previous period, balances, the spending donut with a Table toggle,
+up to 5 budgets with meters, the 6-period trend bars (a bar selects its period), recent entries
+with long-press Edit/Delete, upcoming recurring entries with Confirm/Skip, and the one
+"Nothing logged in {period}" card for an empty period. **Notifications** are built
+(`feature/notifications/`): the alert list behind the bell (`Routes.Alerts`, DataStore JSON, ≤ 50,
+≤ 30 days, cleared for a different login), `Notifier` (snackbar with View while on screen,
+otherwise a system notification on the `budget_alerts` / `bill_reminders` / `daily_reminder`
+channels), the daily-reminder and recurring-reminder foreground observers, `ReminderWorker` for
+both while the app is closed, and `expensify://` links from notifications into the budget, the
+Recurring page or the list. None of this has been looked at on a device yet: this machine has no
+AVD. `icon.png` (512 px, violet receipt) is still only the source art for a launcher icon.
 
 Open decision to settle before registering the app in Firebase: the `applicationId` is still
 `com.example.expensify`. It is baked into `google-services.json` and permanent on Play, so pick

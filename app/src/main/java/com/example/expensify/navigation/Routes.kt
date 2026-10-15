@@ -4,8 +4,17 @@ import kotlinx.serialization.Serializable
 
 /** Type-safe destinations. Page state that should survive Back lives in the arguments, as the web keeps it in the URL. */
 object Routes {
+    /**
+     * The dashboard, with its period (req DSH-01): `period` is a
+     * `DashboardPreset`, `from`/`to` the custom range as `YYYY-MM-DD`. Kept in
+     * the arguments so Back from a drill-down returns to the same period.
+     */
     @Serializable
-    data object Home
+    data class Home(
+        val period: String? = null,
+        val from: String? = null,
+        val to: String? = null,
+    )
 
     /**
      * The list, with what a link into it can preset (req LST-06): a period as
@@ -29,6 +38,10 @@ object Routes {
 
     @Serializable
     data object More
+
+    /** The list of recent alerts behind the bell on Home (req NTF-06). */
+    @Serializable
+    data object Alerts
 
     @Serializable
     data class TransactionDetail(val id: String)
