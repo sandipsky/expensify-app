@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,9 +38,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,6 +68,7 @@ import com.example.expensify.designsystem.theme.dataColor
 import com.example.expensify.feature.categories.domain.Category
 import com.example.expensify.feature.categories.domain.CategoryRules
 import com.example.expensify.feature.categories.domain.CategoryType
+import kotlinx.coroutines.launch
 
 @Composable
 fun CategoriesRoute(
@@ -115,9 +118,10 @@ fun CategoriesScreen(
     onDelete: (Category) -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    // The open tab; "Add category" adds to it.
-    var tab by rememberSaveable { mutableIntStateOf(0) }
-    val type = CategoryType.entries[tab]
+    // The open tab, one page per type: a swipe or a tap on a tab moves between them, and "Add category" adds to the open one.
+    val pager = rememberPagerState { CategoryType.entries.size }
+    val scope = rememberCoroutineScope()
+    val type = CategoryType.entries[pager.currentPage]
     val showFab = state is CategoriesUiState.Content && !state.isEmpty
 
     Scaffold(
@@ -177,24 +181,33 @@ fun CategoriesScreen(
                 }
             } else {
                 Column(Modifier.fillMaxSize().padding(padding)) {
-                    TabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
+                    TabRow(selectedTabIndex = pager.currentPage, containerColor = MaterialTheme.colorScheme.background) {
                         CategoryType.entries.forEachIndexed { index, t ->
                             Tab(
-                                selected = tab == index,
-                                onClick = { tab = index },
+                                selected = pager.currentPage == index,
+                                onClick = { scope.launch { pager.animateScrollToPage(index) } },
                                 text = { Text(stringResource(t.labelRes())) },
                             )
                         }
                     }
-                    CategoryLists(
-                        type = type,
-                        lists = state.of(type),
-                        onAdd = { onAdd(type) },
-                        onEdit = onEdit,
-                        onArchive = onArchive,
-                        onRestore = onRestore,
-                        onDelete = onDelete,
-                    )
+                    HorizontalPager(
+                        state = pager,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        key = { CategoryType.entries[it].name },
+                    ) { page ->
+                        val pageType = CategoryType.entries[page]
+                        CategoryLists(
+                            type = pageType,
+                            lists = state.of(pageType),
+                            onAdd = { onAdd(pageType) },
+                            onEdit = onEdit,
+                            onArchive = onArchive,
+                            onRestore = onRestore,
+                            onDelete = onDelete,
+                        )
+                    }
                 }
             }
         }
