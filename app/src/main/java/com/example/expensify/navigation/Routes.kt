@@ -4,6 +4,14 @@ import kotlinx.serialization.Serializable
 
 /** Type-safe destinations. Page state that should survive Back lives in the arguments, as the web keeps it in the URL. */
 object Routes {
+    // Signed out (req AUTH-05, AUTH-01): the two screens of AuthNavHost.
+
+    @Serializable
+    data object Login
+
+    @Serializable
+    data object Signup
+
     /**
      * The dashboard, with its period (req DSH-01): `period` is a
      * `DashboardPreset`, `from`/`to` the custom range as `YYYY-MM-DD`. Kept in

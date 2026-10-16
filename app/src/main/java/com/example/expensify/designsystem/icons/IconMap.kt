@@ -86,6 +86,8 @@ import androidx.compose.material.icons.rounded.Train
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.VolunteerActivism
@@ -112,6 +114,8 @@ object AppIcons {
     val ExpandMore = Icons.Rounded.ExpandMore
     val ExpandLess = Icons.Rounded.ExpandLess
     val Visible = Icons.Rounded.Visibility
+    val RuleMet = Icons.Rounded.CheckCircle
+    val RuleUnmet = Icons.Rounded.RadioButtonUnchecked
     val Hidden = Icons.Rounded.VisibilityOff
     val Logout = Icons.Rounded.Logout
     val Home = Icons.Rounded.Home

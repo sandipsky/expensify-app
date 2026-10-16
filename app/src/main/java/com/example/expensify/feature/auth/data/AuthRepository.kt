@@ -21,12 +21,14 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.WriteBatch
 import com.google.firebase.firestore.snapshots
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,10 +38,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 interface AuthRepository {
     /** Logs in with the username or the email (req AUTH-05). Refuses as `WrongPassword`. */
     suspend fun login(usernameOrEmail: String, password: String)
+
+    /**
+     * Creates the login, then its profile, its username and the default
+     * categories in one batch, and stays logged in (req AUTH-04, US-08). When
+     * the batch fails, the login is deleted again, so the same email can sign
+     * up once more. A taken username or email is `Taken` naming the field.
+     */
+    suspend fun register(name: String, username: String, email: String, password: String)
 
     suspend fun logout()
 
@@ -94,17 +105,22 @@ private val BAD_CREDENTIALS = setOf(
 /** What a wrong current password reads as on Settings (errors.ts). */
 private const val WRONG_PASSWORD = "That password isn't right"
 
+// What signup is refused with (auth.api.ts); each goes on its own field.
+private const val USERNAME_UNUSABLE = "That username can't be used. Try another one."
+private const val USERNAME_TAKEN = "That username is taken. Try another one."
+private const val EMAIL_TAKEN = "There's already an account with this email. Log in instead."
+
 /** What a new profile's preferences start as. */
 private val DEFAULT_PREFERENCES = Preferences()
 
-/** Port of ../expensify/src/features/auth/auth.api.ts: login, logout, the profile and the Settings writes. */
+/** Port of ../expensify/src/features/auth/auth.api.ts: login, signup, logout, the profile and the Settings writes. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class FirebaseAuthRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
     private val paths: UserPaths,
-    session: SessionRepository,
+    private val session: SessionRepository,
     @ApplicationScope scope: CoroutineScope,
 ) : AuthRepository {
 
@@ -148,7 +164,47 @@ class FirebaseAuthRepository @Inject constructor(
         return listOfNotNull(lookup.getString("email"), lookup.getString("pendingEmail")).filter { it.isNotEmpty() }
     }
 
+    override suspend fun register(name: String, username: String, email: String, password: String) {
+        val handle = Usernames.normalize(username)
+        if (!Usernames.isUsable(handle)) throw AppError.Taken(AppError.Taken.Field.Username, USERNAME_UNUSABLE)
+        if (paths.username(handle).get().await().exists()) throw AppError.Taken(AppError.Taken.Field.Username, USERNAME_TAKEN)
+
+        // Firebase signs the new login in at once, before its profile exists. Held, the session stays signed
+        // out until the batch below has landed, so the shell doesn't open the dashboard, and the profile repair
+        // (syncLogin) doesn't write a profile without a username, on a half-made account.
+        session.holdingSession {
+            val user = try {
+                auth.createUserWithEmailAndPassword(email.trim(), password).await().user
+                    ?: throw IllegalStateException("Sign-up returned no user")
+            } catch (error: FirebaseAuthException) {
+                if (error.errorCode == "ERROR_EMAIL_ALREADY_IN_USE") throw AppError.Taken(AppError.Taken.Field.Email, EMAIL_TAKEN)
+                throw error
+            }
+
+            try {
+                user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(name.trim()).build()).await()
+                val batch = db.batch()
+                batch.set(paths.user(user.uid), newProfileFields(name = name.trim(), username = handle, email = user.email))
+                batch.set(paths.username(handle), mapOf("uid" to user.uid, "email" to user.email, "pendingEmail" to null))
+                addDefaultsTo(batch, paths.collection(UserCollection.Categories, user.uid), emptyList())
+                batch.commit().await()
+            } catch (error: Throwable) {
+                // The login goes again so the same email can retry; even when the signup was cancelled.
+                withContext(NonCancellable) { runCatching { user.delete().await() } }
+                // Someone took the username a moment ago, and the rules refused to overwrite it.
+                val refused = error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED
+                if (refused && runCatching { paths.username(handle).get().await().exists() }.getOrDefault(false)) {
+                    throw AppError.Taken(AppError.Taken.Field.Username, USERNAME_TAKEN)
+                }
+                throw error
+            }
+            // The session was read before the display name was set; the greeting wants the name.
+            session.refresh()
+        }
+    }
+
     override suspend fun logout() {
+        session.expectEnd()
         auth.signOut()
     }
 
@@ -168,6 +224,18 @@ class FirebaseAuthRepository @Inject constructor(
         if (!email.isNullOrEmpty() && email != profile.email) followLoginEmail(user, profile, email)
     }
 
+    /** users/{uid} as signup writes it (req §8): no pending email, no photo, the default preferences. */
+    private fun newProfileFields(name: String, username: String?, email: String?): Map<String, Any?> = mapOf(
+        "name" to name,
+        "username" to username,
+        "email" to email,
+        "pendingEmail" to null,
+        "photoUrl" to null,
+        "preferences" to DEFAULT_PREFERENCES.toFields(),
+        "createdAt" to FieldValue.serverTimestamp(),
+        "updatedAt" to FieldValue.serverTimestamp(),
+    )
+
     /**
      * A login whose signup stopped before its batch was written, and whose
      * login couldn't be deleted either, gets its profile and categories now.
@@ -177,15 +245,10 @@ class FirebaseAuthRepository @Inject constructor(
         val batch = db.batch()
         batch.set(
             paths.user(user.uid),
-            mapOf(
-                "name" to (user.displayName?.takeIf { it.isNotBlank() } ?: user.email?.substringBefore('@') ?: "You"),
-                "username" to null,
-                "email" to user.email,
-                "pendingEmail" to null,
-                "photoUrl" to null,
-                "preferences" to DEFAULT_PREFERENCES.toFields(),
-                "createdAt" to FieldValue.serverTimestamp(),
-                "updatedAt" to FieldValue.serverTimestamp(),
+            newProfileFields(
+                name = user.displayName?.takeIf { it.isNotBlank() } ?: user.email?.substringBefore('@') ?: "You",
+                username = null,
+                email = user.email,
             ),
         )
         val categories = paths.collection(UserCollection.Categories, user.uid)
@@ -208,6 +271,7 @@ class FirebaseAuthRepository @Inject constructor(
         val trimmed = name.trim()
         paths.user(user.uid).update(mapOf("name" to trimmed, "updatedAt" to FieldValue.serverTimestamp())).await()
         runCatching { user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(trimmed).build()).await() }
+            .onSuccess { session.refresh() }
     }
 
     override suspend fun updatePhoto(photoUrl: String?) {
@@ -288,6 +352,8 @@ class FirebaseAuthRepository @Inject constructor(
         batch.delete(paths.user(user.uid))
         batch.commit().await()
 
+        // The session ends on purpose here; the shell says "Your account was deleted", not "Your session ended".
+        session.expectEnd()
         user.delete().await()
     }
 }

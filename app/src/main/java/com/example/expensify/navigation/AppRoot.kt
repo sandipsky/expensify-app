@@ -17,14 +17,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.example.expensify.R
 import com.example.expensify.core.device.DeviceState
 import com.example.expensify.core.ui.AppMessage
 import com.example.expensify.core.ui.Messages
+import com.example.expensify.core.ui.res
 import com.example.expensify.designsystem.components.LoadingScreen
 import com.example.expensify.feature.auth.data.AuthRepository
 import com.example.expensify.feature.auth.data.Session
 import com.example.expensify.feature.auth.data.SessionRepository
-import com.example.expensify.feature.auth.ui.LoginRoute
 import com.example.expensify.feature.budgets.alerts.BudgetAlertsObserver
 import com.example.expensify.feature.notifications.AlertNavigator
 import com.example.expensify.feature.notifications.data.AlertStore
@@ -73,9 +74,11 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch { dailyReminders.run() }
         viewModelScope.launch { recurringReminders.run() }
         viewModelScope.launch {
+            var wasSignedIn = false
             session.session.collect { current ->
                 when (current) {
                     is Session.SignedIn -> {
+                        wasSignedIn = true
                         // This phone's alerts and reminders belong to one user at a time (req NTF-07).
                         alerts.claim(current.uid)
                         // The daily catch-up job runs while the app is closed; it is kept while someone is logged in.
@@ -84,6 +87,10 @@ class AppViewModel @Inject constructor(
                     Session.SignedOut -> {
                         scheduler.cancel()
                         reminders.cancel()
+                        // Ended without Log out or Delete account: the login was deleted, or its email or
+                        // password changed elsewhere (req AUTH-09). Say so over the login screen.
+                        if (wasSignedIn && !session.consumeExpectedEnd()) messages.show(res(R.string.login_session_ended))
+                        wasSignedIn = false
                     }
                     Session.Unknown -> Unit
                 }
@@ -108,8 +115,9 @@ class AppViewModel @Inject constructor(
 
 /**
  * The root: a loading screen until Firebase has restored the session, then
- * the login screen or the signed-in shell. Switching on the session clears
- * every back stack, so nothing of one user's is left for the next.
+ * the login and signup screens or the signed-in shell. Switching on the
+ * session clears every back stack, so nothing of one user's is left for the
+ * next.
  */
 @Composable
 fun AppRoot(viewModel: AppViewModel = hiltViewModel()) {
@@ -130,9 +138,9 @@ fun AppRoot(viewModel: AppViewModel = hiltViewModel()) {
 
     when (session) {
         Session.Unknown -> LoadingScreen()
-        // A note raised as the session ends ("Your account was deleted") still shows over the login screen.
+        // A note raised as the session ends ("Your account was deleted", "Your session ended") still shows over the login screen.
         Session.SignedOut -> Box(Modifier.fillMaxSize()) {
-            LoginRoute()
+            AuthNavHost()
             SnackbarHost(snackbarHost, Modifier.align(Alignment.BottomCenter))
         }
         is Session.SignedIn -> MainNavHost(snackbarHost, viewModel.alertRequests)

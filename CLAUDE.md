@@ -44,7 +44,8 @@ one change) and deployed with `npm run deploy:rules` there, then used here. Neve
 Phase 0 and the first slices of phases 1–3 are built and verified on the `Pixel_10` AVD against
 the emulators: the design system (`designsystem/`), the navigation shell with the bottom bar,
 Hilt and Firebase wiring, `core/` (Money, Periods, Today, AppError, UiText, Messages) with unit
-tests, **Login** (no signup yet; the profile is read live for preferences), the full **Home**
+tests, **Login** and **Sign up** (`AuthNavHost` while signed out; the signup batch runs with the session
+held signed out until the profile lands; the profile is read live for preferences), the full **Home**
 dashboard (below), the full **Accounts** feature (list with total and archived section, add/edit form, account
 page with its entries grouped by day, reconcile sheet, archive/restore, delete), the full
 **Categories** feature under More (expense/income tabs, add/edit with the 48-icon picker and

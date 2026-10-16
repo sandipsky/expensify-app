@@ -39,6 +39,44 @@
     <string name="login_submitting">Logging in…</string>
     <string name="login_enter_username">Enter your username or email</string>
     <string name="login_enter_password">Enter your password</string>
+    <string name="login_username_or_email_placeholder">Your username or email</string>
+    <string name="login_password_placeholder">Your password</string>
+    <string name="login_new_here">New here?</string>
+    <string name="login_create_account">Create an account</string>
+    <string name="login_session_ended">Your session ended. Log in again.</string>
+
+    <!-- Sign up -->
+    <string name="signup_title">Create an account</string>
+    <string name="signup_subtitle">Track income, expenses and transfers in one place.</string>
+    <string name="signup_name">Name</string>
+    <string name="signup_name_placeholder">What should we call you?</string>
+    <string name="signup_username">Username</string>
+    <string name="signup_username_placeholder">Like ram.thapa</string>
+    <string name="signup_username_hint">You can log in with it or your email. It can\'t be changed later.</string>
+    <string name="signup_email">Email</string>
+    <string name="signup_email_placeholder">name@example.com</string>
+    <string name="signup_password">Password</string>
+    <string name="signup_password_placeholder">At least %1$d characters</string>
+    <string name="signup_submit">Create account</string>
+    <string name="signup_submitting">Creating your account…</string>
+    <string name="signup_note">You can start right away. No verification email is sent.</string>
+    <string name="signup_have_account">Already have an account?</string>
+    <string name="signup_log_in">Log in</string>
+    <string name="signup_rule_length">At least %1$d characters</string>
+    <string name="signup_rule_case">Uppercase and lowercase letters (A–a)</string>
+    <string name="signup_rule_special">One special character (!, @, #, $, % …)</string>
+    <string name="signup_rule_number">One number (0–9)</string>
+    <string name="signup_rule_met">Met</string>
+    <string name="signup_rule_unmet">Not yet</string>
+    <string name="signup_error_name_required">Enter your name</string>
+    <string name="signup_error_name_long">Use at most %1$d characters</string>
+    <string name="signup_error_username_required">Choose a username</string>
+    <string name="signup_error_username_short">Use at least %1$d characters</string>
+    <string name="signup_error_username_long">Use at most %1$d characters</string>
+    <string name="signup_error_username_chars">Use only letters, numbers, dots, dashes and underscores</string>
+    <string name="signup_error_email_required">Enter your email</string>
+    <string name="signup_error_email_invalid">Enter an email address, like name@example.com</string>
+    <string name="signup_error_password_short">Use at least %1$d characters</string>
 
     <!-- Home -->
     <string name="home_greeting_morning">Good morning, %1$s</string>
@@ -864,7 +902,7 @@
     <string name="settings_delete_account_intro">This deletes your accounts, transactions, categories, budgets and recurring rules, then your profile and your login. It can\'t be undone.</string>
     <string name="settings_type_to_confirm">Type %1$s to confirm</string>
     <string name="settings_deleting">Deleting…</string>
-    <string name="settings_account_deleted">Your account was deleted.</string>
+    <string name="settings_account_deleted">Your account and everything in it were deleted.</string>
 
     <!-- Dashboard (DSH-01…DSH-12); wording from the dashboard components -->
     <string name="dashboard_hide_amounts">Hide amounts</string>

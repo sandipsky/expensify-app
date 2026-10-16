@@ -21,6 +21,7 @@ import com.example.expensify.core.ui.plain
 import com.example.expensify.core.ui.res
 import com.example.expensify.designsystem.components.Banner
 import com.example.expensify.designsystem.components.BannerTone
+import com.example.expensify.designsystem.components.PasswordField
 import com.example.expensify.designsystem.theme.ExpensifyTheme
 import com.example.expensify.feature.auth.data.AuthRepository
 import com.example.expensify.feature.settings.domain.SettingsRules

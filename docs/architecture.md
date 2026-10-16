@@ -351,8 +351,13 @@ sealed interface Session { data object Unknown : Session; data object SignedOut 
   (`splash.setKeepOnScreenCondition`), then `AppNavHost` starts at `Login` or `Home`.
 - `SignedIn` → `DeviceState.claim(uid)`: if `owner_uid` differs, clear alerts and reminder
   state (NTF-07); start the app-scoped observers (§9).
-- `SignedIn → SignedOut` without `logout()` having been called (deleted login, password
-  changed elsewhere): navigate to `Login` clearing the back stack, show "Your session ended".
+- `SignedIn → SignedOut` without `logout()` or `deleteAccount()` having been called (deleted
+  login, password changed elsewhere): the shell switches to `AuthNavHost` and shows "Your session
+  ended. Log in again." `SessionRepository.expectEnd()` marks the two expected ends.
+- Signup: Firebase signs the new login in before its profile exists, so `register` runs inside
+  `SessionRepository.holdingSession { }`, which reports `SignedOut` until the batch (profile,
+  username lookup, 25 default categories) has landed. Otherwise the dashboard would open, and
+  `syncLogin` would write a profile without a username, on a half-made account.
 - A profile that doesn't exist (signup batch never landed) is repaired on first load
   exactly as req §9.3 says (`createMissingProfile`), inside `AuthRepository`.
 - The `redirect` after login: the route the user tried to open is kept in the `Login`
