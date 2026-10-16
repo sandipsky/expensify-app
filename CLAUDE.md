@@ -84,7 +84,10 @@ otherwise a system notification on the `budget_alerts` / `bill_reminders` / `dai
 channels), the daily-reminder and recurring-reminder foreground observers, `ReminderWorker` for
 both while the app is closed, and `expensify://` links from notifications into the budget, the
 Recurring page or the list. None of this has been looked at on a device yet: this machine has no
-AVD. `icon.png` (512 px, violet receipt) is still only the source art for a launcher icon.
+AVD. `icon.png` (512 px, violet receipt) is the source art for the launcher icon; the adaptive layers under
+`res/mipmap-*/` (background gradient, keyed receipt foreground, monochrome silhouette, legacy and round PNGs)
+were generated from it with `java tools/IconGen.java icon.png app/src/main/res`; rerun that rather than
+editing them if the art changes.
 
 Open decision to settle before registering the app in Firebase: the `applicationId` is still
 `com.example.expensify`. It is baked into `google-services.json` and permanent on Play, so pick
