@@ -9,8 +9,6 @@ import com.example.expensify.core.firebase.UserCollection
 import com.example.expensify.core.firebase.UserPaths
 import com.example.expensify.core.firebase.instant
 import com.example.expensify.core.firebase.money
-import com.example.expensify.core.firebase.settled
-import com.example.expensify.core.firebase.settledDocument
 import com.example.expensify.core.money.Money
 import com.example.expensify.feature.auth.data.SessionRepository
 import com.example.expensify.feature.transactions.domain.Transaction
@@ -132,7 +130,7 @@ class FirestoreTransactionRepository @Inject constructor(
         if (uid == null) {
             flowOf()
         } else {
-            paths.document(UserCollection.Transactions, id, uid).snapshots().settledDocument().map { snapshot ->
+            paths.document(UserCollection.Transactions, id, uid).snapshots().map { snapshot ->
                 if (!snapshot.exists()) throw notFound()
                 snapshot.toTransaction()
             }
@@ -147,7 +145,6 @@ class FirestoreTransactionRepository @Inject constructor(
             } else {
                 query(paths.collection(UserCollection.Transactions, uid))
                     .snapshots()
-                    .settled()
                     .map { snapshot ->
                         snapshot.documents.map { it.toTransaction() }.sortedWith(TransactionRules.newestFirst)
                     }

@@ -3,11 +3,8 @@ package com.example.expensify.core.firebase
 import com.example.expensify.core.money.Money
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.WriteBatch
 import java.time.Instant
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.tasks.await
 
 /** Firestore caps a commit at 500 writes; bulk writes stay under it. */
@@ -25,17 +22,19 @@ fun DocumentSnapshot.instant(field: String): Instant =
 /** A stored amount. `getDouble` coerces the Long that Firestore hands back for whole values. */
 fun DocumentSnapshot.money(field: String): Money? = getDouble(field)?.let(Money::fromStored)
 
-/**
- * Drops the cache-only empty snapshot that can precede the first server
- * answer, so a list never flashes "nothing here" before it has loaded.
- * A cache snapshot with pending writes is the user's own change and passes.
+/*
+ * Listener flows are `Query.snapshots()` / `DocumentReference.snapshots()` exactly as the SDK
+ * raises them: nothing filters a snapshot on `metadata.isFromCache`.
+ *
+ * The SDK already holds the first event back while it is online and the cache has nothing to
+ * show (QueryListener.shouldRaiseInitialEvent), so a list never flashes "nothing here" ahead of
+ * the server. The two cases where it does raise an empty from-cache snapshot, a query the cache
+ * knows was empty at its last sync and a client that has gone offline, are the cases where that
+ * snapshot is the only event coming: with the default MetadataChanges.EXCLUDE the server's later
+ * "still empty" is a metadata-only change and is never delivered. A filter that dropped such
+ * snapshots left Home, Transactions and Budgets on their skeletons for good whenever one of their
+ * queries was empty (no budgets, no rules, nothing in last month…); removed 17 October 2026.
  */
-fun Flow<QuerySnapshot>.settled(): Flow<QuerySnapshot> =
-    filterNot { it.metadata.isFromCache && it.isEmpty && !it.metadata.hasPendingWrites() }
-
-/** The document form: a cache miss is not "deleted"; only the server, or a local write, says so. */
-fun Flow<DocumentSnapshot>.settledDocument(): Flow<DocumentSnapshot> =
-    filterNot { it.metadata.isFromCache && !it.exists() && !it.metadata.hasPendingWrites() }
 
 /** Commits the writes in batches under Firestore's cap, one batch after another. */
 suspend fun FirebaseFirestore.commitInBatches(writes: List<(WriteBatch) -> Unit>) {

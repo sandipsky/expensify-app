@@ -122,6 +122,10 @@ class TransactionsViewModel @Inject constructor(
         ),
     )
 
+    /** The last content built, kept while the same period reloads (see [HomeViewModel.shown]); only the state flow's one collector writes it. */
+    @Volatile
+    private var shown: TransactionsUiState.Content? = null
+
     private val range: Flow<DateRange> = combine(preset, custom, today.date) { p, c, day -> p.range(day, c) }.distinctUntilChanged()
 
     private val loaded: Flow<Loaded> = range.flatMapLatest { r ->
@@ -156,7 +160,10 @@ class TransactionsViewModel @Inject constructor(
             options = options,
         )
         when (loaded) {
-            Loaded.Loading -> TransactionsUiState.Loading(toolbar)
+            // The same period and filter loading again (the page came back after its listener was
+            // released): the list stays up while it refreshes; skeletons only the first time (design checklist).
+            Loaded.Loading -> shown?.takeIf { it.toolbar.range == range && it.toolbar.filter == settings.filter }?.copy(toolbar = toolbar)
+                ?: TransactionsUiState.Loading(toolbar)
             is Loaded.Failed -> TransactionsUiState.Error(toolbar, loaded.message)
             is Loaded.Ok -> {
                 val visible = TransactionRules.filter(loaded.txs, settings.filter) { TxRows.searchTextOf(it, lookups) }
@@ -165,7 +172,7 @@ class TransactionsViewModel @Inject constructor(
                     totals = TransactionRules.totalsOf(visible),
                     days = TxRows.days(visible, lookups),
                     count = visible.size,
-                )
+                ).also { shown = it }
             }
         }
     }

@@ -5,7 +5,6 @@ import com.example.expensify.core.firebase.ApplicationScope
 import com.example.expensify.core.firebase.UserCollection
 import com.example.expensify.core.firebase.UserPaths
 import com.example.expensify.core.firebase.commitInBatches
-import com.example.expensify.core.firebase.settledDocument
 import com.example.expensify.feature.auth.domain.NotificationPrefs
 import com.example.expensify.feature.auth.domain.Preferences
 import com.example.expensify.feature.auth.domain.PreferencesPatch
@@ -129,7 +128,7 @@ class FirebaseAuthRepository @Inject constructor(
             if (uid == null) {
                 flowOf(null)
             } else {
-                paths.user(uid).snapshots().settledDocument().map { snapshot ->
+                paths.user(uid).snapshots().map { snapshot ->
                     if (snapshot.exists()) snapshot.toProfile(uid) else null
                 }
             }

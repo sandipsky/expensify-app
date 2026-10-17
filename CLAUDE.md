@@ -228,6 +228,7 @@ The full model is requirements §8/§9. These are the places an Android port goe
 | Errors | Map `FirebaseAuthException` / `FirebaseFirestoreException` codes to the sentences in `errors.ts`; Firebase's own messages never reach the screen. `AppError` codes: `wrong-password`, `taken`(field), `stale`, `not-found`, `signed-out` with the same screen behaviour as §9.1 |
 | Recurring | Add-occurrences is a `runTransaction` that re-reads the rule and refuses (`stale`) when `dates[0] != nextDueDate` or the rule is paused; ≤ 100 dates per write. Same on Android, so two devices never double-add |
 | Offline | Firestore's on-device cache stays **on** (Android default): lists read offline. Transactions and batches need a connection and fail with "Can't reach the server. Check your connection and try again."; the form stays open |
+| Snapshots | Take `snapshots()` as the SDK raises them; never drop one for `metadata.isFromCache`. Online with nothing cached the SDK already holds the first event back, and the empty from-cache snapshot it does raise (a query synced empty before, or the client offline) is the only event coming: under `MetadataChanges.EXCLUDE` the server's "still empty" is a metadata-only change and is never delivered. A filter there left Home, Transactions and Budgets on skeletons for good (removed 17 October 2026) |
 
 ### Firebase wiring
 

@@ -8,7 +8,6 @@ import com.example.expensify.core.firebase.UserCollection
 import com.example.expensify.core.firebase.UserPaths
 import com.example.expensify.core.firebase.instant
 import com.example.expensify.core.firebase.money
-import com.example.expensify.core.firebase.settled
 import com.example.expensify.core.money.Money
 import com.example.expensify.feature.auth.data.SessionRepository
 import com.example.expensify.feature.budgets.domain.Budget
@@ -78,7 +77,7 @@ class FirestoreBudgetRepository @Inject constructor(
             if (uid == null) {
                 flowOf(emptyList())
             } else {
-                paths.collection(UserCollection.Budgets, uid).snapshots().settled()
+                paths.collection(UserCollection.Budgets, uid).snapshots()
                     .map { snapshot -> snapshot.documents.map { it.toBudget() }.sortedWith(BudgetRules.listOrder) }
             }
         }

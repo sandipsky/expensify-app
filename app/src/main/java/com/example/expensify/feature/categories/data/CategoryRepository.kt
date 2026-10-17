@@ -5,7 +5,6 @@ import com.example.expensify.core.firebase.ApplicationScope
 import com.example.expensify.core.firebase.UserCollection
 import com.example.expensify.core.firebase.UserPaths
 import com.example.expensify.core.firebase.instant
-import com.example.expensify.core.firebase.settled
 import com.example.expensify.feature.auth.data.SessionRepository
 import com.example.expensify.feature.categories.domain.Category
 import com.example.expensify.feature.categories.domain.CategoryBody
@@ -75,7 +74,7 @@ class FirestoreCategoryRepository @Inject constructor(
             if (uid == null) {
                 flowOf(emptyList())
             } else {
-                paths.collection(UserCollection.Categories, uid).snapshots().settled()
+                paths.collection(UserCollection.Categories, uid).snapshots()
                     .map { snapshot -> snapshot.documents.map { it.toCategory() }.sortedWith(categoryOrder) }
             }
         }

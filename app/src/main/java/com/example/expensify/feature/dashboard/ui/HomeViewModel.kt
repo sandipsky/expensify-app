@@ -321,6 +321,16 @@ class HomeViewModel @Inject constructor(
 
     private val args = HomeArgs(savedState)
     private val masked = MutableStateFlow(true)
+
+    /**
+     * The last content built, kept across the listeners being released and
+     * re-attached (the page left and came back; see `WhileSubscribed`): the
+     * same period loading again shows its figures while they refresh, and
+     * skeletons only the first time a period loads (design checklist).
+     * Only the state flow's one collector writes it.
+     */
+    @Volatile
+    private var shown: HomeUiState.Content? = null
     private val deleteDialog = MutableStateFlow(TransactionDialogs())
 
     /** The period and the ranges around it: the trend periods, the one compared with, and one range over the earlier ones. */
@@ -398,7 +408,10 @@ class HomeViewModel @Inject constructor(
         val headerUi = HomeHeaderUi(header.name, p.ui, header.masked, header.unread)
         (current as? Loaded.Failed)?.let { return HomeUiState.Error(headerUi, it.message) }
         (earlier as? Loaded.Failed)?.let { return HomeUiState.Error(headerUi, it.message) }
-        if (current !is Loaded.Ok || earlier !is Loaded.Ok) return HomeUiState.Loading(headerUi)
+        if (current !is Loaded.Ok || earlier !is Loaded.Ok) {
+            val kept = shown?.takeIf { it.header.period.range == p.ui.range && it.today == p.today }
+            return kept?.copy(header = headerUi) ?: HomeUiState.Loading(headerUi)
+        }
 
         val lookups = TxRows.Lookups(lists.accounts, lists.categories, p.today)
         /** The selected period's entries, newest first. */
@@ -426,7 +439,7 @@ class HomeViewModel @Inject constructor(
             recent = recentTxs.map { TxRows.toRow(it, lookups) },
             recentTxs = recentTxs.associateBy { it.id },
             upcoming = buildUpcoming(lists.rules, lookups),
-        )
+        ).also { shown = it }
     }
 
     // Privacy (DSH-11)

@@ -6,8 +6,6 @@ import com.example.expensify.core.firebase.UserCollection
 import com.example.expensify.core.firebase.UserPaths
 import com.example.expensify.core.firebase.instant
 import com.example.expensify.core.firebase.money
-import com.example.expensify.core.firebase.settled
-import com.example.expensify.core.firebase.settledDocument
 import com.example.expensify.core.money.Money
 import com.example.expensify.feature.accounts.domain.Account
 import com.example.expensify.feature.accounts.domain.AccountBody
@@ -70,7 +68,7 @@ class FirestoreAccountRepository @Inject constructor(
             if (uid == null) {
                 flowOf(emptyList())
             } else {
-                paths.collection(UserCollection.Accounts, uid).snapshots().settled()
+                paths.collection(UserCollection.Accounts, uid).snapshots()
                     .map { snapshot -> snapshot.documents.map { it.toAccount() }.sortedBy { it.sortOrder } }
             }
         }
@@ -88,7 +86,7 @@ class FirestoreAccountRepository @Inject constructor(
         if (uid == null) {
             flowOf()
         } else {
-            paths.document(UserCollection.Accounts, id, uid).snapshots().settledDocument().map { snapshot ->
+            paths.document(UserCollection.Accounts, id, uid).snapshots().map { snapshot ->
                 if (!snapshot.exists()) throw notFound()
                 snapshot.toAccount()
             }
