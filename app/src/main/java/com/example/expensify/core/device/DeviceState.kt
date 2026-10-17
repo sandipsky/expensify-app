@@ -25,7 +25,9 @@ private val Context.deviceStore: DataStore<Preferences> by preferencesDataStore(
  * the profile's theme, so the first frame and the login screen already use it
  * (req SET-02); and what this phone remembers about notifications, the alert
  * list behind the bell and the reminders it already showed (req NTF-06,
- * NTF-07), the way the web keeps all of it in localStorage.
+ * NTF-07), the way the web keeps all of it in localStorage. The app lock's
+ * switch (Settings › Security) is here too, keyed to the login that turned
+ * it on; it has no web counterpart.
  */
 @Singleton
 class DeviceState @Inject constructor(@ApplicationContext private val context: Context) {
@@ -45,6 +47,9 @@ class DeviceState @Inject constructor(@ApplicationContext private val context: C
 
         /** Whose alert and reminder state the three above are (`expensify.notifications-owner.v1`). */
         val OWNER_UID = stringPreferencesKey("owner_uid")
+
+        /** The login the app lock is on for; absent while it is off. */
+        val APP_LOCK_UID = stringPreferencesKey("app_lock_uid")
     }
 
     private val data: Flow<Preferences> = context.deviceStore.data
@@ -65,9 +70,15 @@ class DeviceState @Inject constructor(@ApplicationContext private val context: C
     /** The recurring reminders already shown, as stored; null until one was. */
     val billRemindersJson: Flow<String?> = data.map { it[Keys.BILL_REMINDERS_JSON] }.distinctUntilChanged()
 
+    /** The login the app lock is on for; null while it is off. */
+    val appLockUid: Flow<String?> = data.map { it[Keys.APP_LOCK_UID] }.distinctUntilChanged()
+
     suspend fun setLastAccountId(id: String) = write { it[Keys.LAST_ACCOUNT_ID] = id }
 
     suspend fun setTheme(stored: String) = write { it[Keys.THEME] = stored }
+
+    /** Turns the app lock on for a login, or off (null). */
+    suspend fun setAppLockUid(uid: String?) = write { if (uid == null) it.remove(Keys.APP_LOCK_UID) else it[Keys.APP_LOCK_UID] = uid }
 
     /** Changes the alert list in one read-modify-write, so two alerts raised together both land. */
     suspend fun updateAlertsJson(transform: (String?) -> String?) = write { prefs ->
@@ -110,6 +121,7 @@ class DeviceState @Inject constructor(@ApplicationContext private val context: C
         prefs.remove(Keys.LAST_ACCOUNT_ID)
         clearNotificationKeys(prefs)
         prefs.remove(Keys.OWNER_UID)
+        prefs.remove(Keys.APP_LOCK_UID)
     }
 
     private fun clearNotificationKeys(prefs: MutablePreferences) {

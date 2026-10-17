@@ -15,6 +15,8 @@ import com.example.expensify.feature.auth.data.AuthRepository
 import com.example.expensify.feature.auth.domain.PreferencesPatch
 import com.example.expensify.feature.auth.domain.Profile
 import com.example.expensify.feature.auth.domain.ThemePref
+import com.example.expensify.feature.auth.lock.AppLock
+import com.example.expensify.feature.auth.lock.Biometrics
 import com.example.expensify.feature.settings.domain.SettingsRules
 import com.example.expensify.feature.transactions.data.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +42,8 @@ sealed interface SettingsUiState {
         /** A photo is being read or saved; its buttons wait. */
         val photoBusy: Boolean,
         val deleteAll: DeleteAllDialog?,
+        /** Settings › Security: whether the app lock is on for this login. */
+        val appLock: Boolean,
     ) : SettingsUiState
 }
 
@@ -55,6 +59,9 @@ class SettingsViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val messages: Messages,
     private val thumbnails: PhotoThumbnails,
+    private val appLock: AppLock,
+    /** For the screen to run the phone's prompt; it holds no activity. */
+    val biometrics: Biometrics,
 ) : ViewModel() {
 
     private val photoBusy = MutableStateFlow(false)
@@ -65,8 +72,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { runCatching { auth.syncLogin() } }
     }
 
-    val state: StateFlow<SettingsUiState> = combine(auth.profile(), photoBusy, deleteAll) { profile, busy, dialog ->
-        if (profile == null) SettingsUiState.Loading else SettingsUiState.Content(profile, busy, dialog) as SettingsUiState
+    val state: StateFlow<SettingsUiState> = combine(auth.profile(), photoBusy, deleteAll, appLock.enabled) { profile, busy, dialog, lock ->
+        if (profile == null) SettingsUiState.Loading else SettingsUiState.Content(profile, busy, dialog, appLock = lock?.on == true) as SettingsUiState
     }
         .catch { emit(SettingsUiState.Error(plain(ErrorMessages.of(it)))) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState.Loading)
@@ -91,6 +98,18 @@ class SettingsViewModel @Inject constructor(
     fun setBudgetAlerts(on: Boolean) = save(PreferencesPatch(budgetAlerts = on), R.string.settings_could_not_save)
 
     fun setBillReminders(on: Boolean) = save(PreferencesPatch(billReminders = on), R.string.settings_could_not_save)
+
+    // Security: the app lock, kept on this phone (feature/auth/lock). The phone has just confirmed it is them.
+
+    fun setAppLock(on: Boolean) {
+        viewModelScope.launch {
+            appLock.setEnabled(on)
+            messages.show(res(if (on) R.string.settings_app_lock_on else R.string.settings_app_lock_off))
+        }
+    }
+
+    /** The prompt was cancelled or did not pass: the switch stays as it was. */
+    fun appLockNotChanged() = messages.show(res(R.string.settings_app_lock_not_changed))
 
     /** What the system answered when asked to allow notifications. */
     fun notifyPermission(granted: Boolean) {

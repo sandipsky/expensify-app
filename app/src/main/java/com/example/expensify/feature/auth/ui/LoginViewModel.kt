@@ -8,6 +8,7 @@ import com.example.expensify.core.ui.UiText
 import com.example.expensify.core.ui.plain
 import com.example.expensify.core.ui.res
 import com.example.expensify.feature.auth.data.AuthRepository
+import com.example.expensify.feature.auth.lock.AppLock
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -30,6 +31,7 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val appLock: AppLock,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginUiState())
@@ -56,6 +58,8 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(submitting = true, error = null) }
             try {
+                // A password typed here is proof enough: the app lock (Settings › Security) does not ask again right after.
+                appLock.unlock()
                 authRepository.login(current.usernameOrEmail, current.password)
             } catch (error: CancellationException) {
                 throw error

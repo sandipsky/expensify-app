@@ -3,6 +3,7 @@ package com.example.expensify.feature.settings.ui
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,6 +78,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.expensify.R
@@ -92,10 +95,15 @@ import com.example.expensify.feature.auth.domain.NotificationPrefs
 import com.example.expensify.feature.auth.domain.Preferences
 import com.example.expensify.feature.auth.domain.Profile
 import com.example.expensify.feature.auth.domain.ThemePref
+import com.example.expensify.feature.auth.lock.Biometrics
 import com.example.expensify.feature.settings.domain.SettingsRules
+import kotlinx.coroutines.launch
 
 /** What the phone says about showing notifications at all: the app-level switch in system settings. */
 data class NotificationAccess(val enabled: Boolean)
+
+/** Whether the phone has a fingerprint, face or screen lock the app lock can use. */
+data class AppLockAccess(val available: Boolean)
 
 @Composable
 fun SettingsRoute(
@@ -107,11 +115,16 @@ fun SettingsRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = LocalActivity.current as? FragmentActivity
+    val scope = rememberCoroutineScope()
+    val confirmTitle = stringResource(R.string.lock_confirm_title)
 
-    // The system setting can change at any time, so it's read again whenever the screen comes back.
+    // The system settings can change at any time, so they're read again whenever the screen comes back.
     var access by remember { mutableStateOf(NotificationAccess(NotificationManagerCompat.from(context).areNotificationsEnabled())) }
+    var lock by remember { mutableStateOf(AppLockAccess(viewModel.biometrics.availability() != Biometrics.Availability.NoScreenLock)) }
     LifecycleResumeEffect(Unit) {
         access = NotificationAccess(NotificationManagerCompat.from(context).areNotificationsEnabled())
+        lock = AppLockAccess(viewModel.biometrics.availability() != Biometrics.Availability.NoScreenLock)
         onPauseOrDispose { }
     }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -125,12 +138,25 @@ fun SettingsRoute(
     SettingsScreen(
         state = state,
         access = access,
+        lock = lock,
         onBack = onBack,
         onEditProfile = onEditProfile,
         onChangePassword = onChangePassword,
         onPickPhoto = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onRemovePhoto = viewModel::removePhoto,
         onTheme = viewModel::setTheme,
+        onAppLock = { on ->
+            // Turning it on or off takes the phone's own check first, as the lock itself does.
+            val host = activity
+            if (host == null) {
+                viewModel.appLockNotChanged()
+            } else {
+                scope.launch {
+                    val outcome = viewModel.biometrics.authenticate(host, confirmTitle, null)
+                    if (outcome == Biometrics.Outcome.Success) viewModel.setAppLock(on) else viewModel.appLockNotChanged()
+                }
+            }
+        },
         onDailyReminder = viewModel::setDailyReminder,
         onReminderTime = viewModel::setReminderTime,
         onBudgetAlerts = viewModel::setBudgetAlerts,
@@ -161,12 +187,14 @@ private fun notificationSettingsIntent(packageName: String): Intent =
 fun SettingsScreen(
     state: SettingsUiState,
     access: NotificationAccess,
+    lock: AppLockAccess,
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
     onChangePassword: () -> Unit,
     onPickPhoto: () -> Unit,
     onRemovePhoto: () -> Unit,
     onTheme: (ThemePref) -> Unit,
+    onAppLock: (Boolean) -> Unit,
     onDailyReminder: (Boolean) -> Unit,
     onReminderTime: (String) -> Unit,
     onBudgetAlerts: (Boolean) -> Unit,
@@ -210,6 +238,9 @@ fun SettingsScreen(
                     SectionTitle(stringResource(R.string.settings_section_profile))
                     ProfileCard(state.profile, state.photoBusy, onEditProfile, onPickPhoto, onRemovePhoto)
                     PasswordCard(onChangePassword)
+
+                    SectionTitle(stringResource(R.string.settings_section_security))
+                    SecurityCard(appLock = state.appLock, lock = lock, onChange = onAppLock)
 
                     SectionTitle(stringResource(R.string.settings_section_appearance))
                     AppearanceCard(state.profile.preferences.theme, onTheme)
@@ -454,23 +485,41 @@ private fun NotificationsCard(
     }
 }
 
+/**
+ * Settings › Security: the app lock, which asks for the phone's fingerprint, face or screen
+ * lock when Expensify opens and when it comes back after a minute away (feature/auth/lock).
+ * Not offered on a phone with no screen lock at all.
+ */
+@Composable
+private fun SecurityCard(appLock: Boolean, lock: AppLockAccess, onChange: (Boolean) -> Unit) {
+    AppCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp)) {
+        SwitchRow(
+            label = stringResource(R.string.settings_app_lock),
+            hint = stringResource(if (lock.available) R.string.settings_app_lock_hint else R.string.settings_app_lock_unavailable),
+            checked = appLock && lock.available,
+            onChange = onChange,
+            enabled = lock.available,
+        )
+    }
+}
+
 /** A switch with its label and a line explaining it; the whole row toggles. */
 @Composable
-private fun SwitchRow(label: String, hint: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun SwitchRow(label: String, hint: String, checked: Boolean, onChange: (Boolean) -> Unit, enabled: Boolean = true) {
     Row(
         Modifier
             .fillMaxWidth()
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
             .heightIn(min = 56.dp)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge)
+            Text(label, style = MaterialTheme.typography.bodyLarge, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
             Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.width(16.dp))
-        Switch(checked = checked, onCheckedChange = null)
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
 
@@ -549,9 +598,11 @@ private fun SettingsPreview() {
                 ),
                 photoBusy = false,
                 deleteAll = null,
+                appLock = true,
             ),
             access = NotificationAccess(enabled = false),
-            onBack = {}, onEditProfile = {}, onChangePassword = {}, onPickPhoto = {}, onRemovePhoto = {}, onTheme = {},
+            lock = AppLockAccess(available = true),
+            onBack = {}, onEditProfile = {}, onChangePassword = {}, onPickPhoto = {}, onRemovePhoto = {}, onTheme = {}, onAppLock = {},
             onDailyReminder = {}, onReminderTime = {}, onBudgetAlerts = {}, onBillReminders = {}, onAllowNotifications = {}, onOpenNotificationSettings = {},
             onDeleteAll = {}, onConfirmDeleteAll = {}, onDismissDeleteAll = {}, onDeleteAccount = {},
         )

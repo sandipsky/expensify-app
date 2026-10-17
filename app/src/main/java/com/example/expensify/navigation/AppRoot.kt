@@ -26,6 +26,9 @@ import com.example.expensify.designsystem.components.LoadingScreen
 import com.example.expensify.feature.auth.data.AuthRepository
 import com.example.expensify.feature.auth.data.Session
 import com.example.expensify.feature.auth.data.SessionRepository
+import com.example.expensify.feature.auth.lock.AppLock
+import com.example.expensify.feature.auth.lock.LockEnabled
+import com.example.expensify.feature.auth.lock.LockRoute
 import com.example.expensify.feature.budgets.alerts.BudgetAlertsObserver
 import com.example.expensify.feature.notifications.AlertNavigator
 import com.example.expensify.feature.notifications.data.AlertStore
@@ -60,12 +63,17 @@ class AppViewModel @Inject constructor(
     alertNavigator: AlertNavigator,
     auth: AuthRepository,
     deviceState: DeviceState,
+    appLock: AppLock,
 ) : ViewModel() {
     val session: StateFlow<Session> = session.session
     val messages: SharedFlow<AppMessage> = messages.messages
 
     /** Where an alert asks the shell to go: a tapped notification, the snackbar's View, a row in the list. */
     val alertRequests: Flow<AlertTarget> = alertNavigator.requests
+
+    /** The app lock (Settings › Security): whether it is on for the login shown, and whether it has engaged. */
+    val lockEnabled: StateFlow<LockEnabled?> = appLock.enabled
+    val lockGeneration: StateFlow<Int> = appLock.generation
 
     init {
         // The app-scoped observers (architecture §9) run while the shell is alive; each does nothing while logged out.
@@ -136,13 +144,32 @@ fun AppRoot(viewModel: AppViewModel = hiltViewModel()) {
         }
     }
 
-    when (session) {
+    when (val current = session) {
         Session.Unknown -> LoadingScreen()
         // A note raised as the session ends ("Your account was deleted", "Your session ended") still shows over the login screen.
         Session.SignedOut -> Box(Modifier.fillMaxSize()) {
             AuthNavHost()
             SnackbarHost(snackbarHost, Modifier.align(Alignment.BottomCenter))
         }
-        is Session.SignedIn -> MainNavHost(snackbarHost, viewModel.alertRequests)
+        is Session.SignedIn -> SignedInShell(current, viewModel, snackbarHost)
+    }
+}
+
+/**
+ * The shell, behind the lock screen while the app lock has engaged. A
+ * loading screen until this phone has said whether the lock is on for this
+ * login, so the shell never shows for a frame before the lock does. The
+ * shell stays composed under the lock, so unlocking returns to the same page.
+ */
+@Composable
+private fun SignedInShell(session: Session.SignedIn, viewModel: AppViewModel, snackbarHost: SnackbarHostState) {
+    val lock by viewModel.lockEnabled.collectAsStateWithLifecycle()
+    val generation by viewModel.lockGeneration.collectAsStateWithLifecycle()
+    val known = lock
+    if (known == null || known.uid != session.uid) {
+        LoadingScreen()
+    } else {
+        MainNavHost(snackbarHost, viewModel.alertRequests)
+        if (known.on && generation > 0) LockRoute()
     }
 }

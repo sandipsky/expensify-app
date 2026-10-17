@@ -9,6 +9,7 @@ import com.example.expensify.core.ui.UiText
 import com.example.expensify.core.ui.plain
 import com.example.expensify.core.ui.res
 import com.example.expensify.feature.auth.data.AuthRepository
+import com.example.expensify.feature.auth.lock.AppLock
 import com.example.expensify.feature.auth.domain.SignupRules
 import com.example.expensify.feature.auth.domain.Usernames
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,6 +45,7 @@ data class SignupUiState(
 @HiltViewModel
 class SignupViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val appLock: AppLock,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SignupUiState())
@@ -94,6 +96,8 @@ class SignupViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(submitting = true, error = null) }
             try {
+                // A new login is proof enough: the app lock (Settings › Security) does not ask right after.
+                appLock.unlock()
                 authRepository.register(
                     name = current.name,
                     username = current.username,

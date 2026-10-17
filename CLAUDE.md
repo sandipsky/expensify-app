@@ -70,7 +70,12 @@ built (phase 4), so the report cards don't mention it. **Settings** is built: pr
 128 px JPEG data URL, name, email change with the verification link, read-only username), change
 password, theme (applied at once and cached in DataStore for the first frame), the notification
 switches with the reminder time and the phone's notification permission, delete all transactions
-with the count, and delete account with typed DELETE + password; `AuthRepository` now has the
+with the count, and delete account with typed DELETE + password, and a **Security** section
+(17 October 2026) with the app lock: `feature/auth/lock/` keeps the signed-in shell behind the
+phone's fingerprint, face or screen lock (`androidx.biometric`, `BIOMETRIC_WEAK | DEVICE_CREDENTIAL`)
+when the app opens and when it comes back after a minute away; the switch is device-local in
+DataStore keyed to the uid, the Firebase session is untouched, and `MainActivity` is a
+`FragmentActivity` for the prompt; `AuthRepository` now has the
 web's `updateProfile`/`updatePreferences`/`changeEmail`/`changePassword`/`deleteAccount` and the
 profile-load repairs (`syncLogin`). The **Dashboard** is built (`feature/dashboard/`): the period
 in `Routes.Home`'s arguments with This month / Last month / Custom chips pinned on scroll, the
@@ -411,6 +416,7 @@ Actions: Add (preset), Reconcile (sheet showing in-app figure and the adjustment
 months or 2 years) and the expenses behind a selected period.
 
 **Settings.** Profile (photo, name, email with pending-link note, read-only username),
+Security (the app lock switch: fingerprint, face or screen lock on open and after a minute away),
 Appearance (theme), Notifications (switches, reminder time, system permission state), Data and
 privacy (delete all transactions with count, delete account with typed DELETE + password).
 

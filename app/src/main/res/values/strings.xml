@@ -971,4 +971,22 @@
     <string name="channel_bill_reminders_description">The day before and on the day an ask-first recurring entry is due.</string>
     <string name="channel_daily_reminder">Daily reminder</string>
     <string name="channel_daily_reminder_description">A reminder to log your spending at the time you choose.</string>
+
+    <!-- App lock (Settings › Security, feature/auth/lock): no web counterpart -->
+    <string name="settings_section_security">Security</string>
+    <string name="settings_app_lock">Lock with fingerprint or face</string>
+    <string name="settings_app_lock_hint">Asks for your fingerprint, face or screen lock when Expensify opens, and when you come back to it after a minute away.</string>
+    <string name="settings_app_lock_unavailable">Set up a fingerprint, face or screen lock in your phone\'s settings first.</string>
+    <string name="settings_app_lock_on">App lock on</string>
+    <string name="settings_app_lock_off">App lock off</string>
+    <string name="settings_app_lock_not_changed">App lock not changed · Confirm it\'s you to change it.</string>
+    <string name="lock_title">Expensify is locked</string>
+    <string name="lock_subtitle">Unlock with your fingerprint, face or screen lock to see your money.</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_prompt_title">Unlock Expensify</string>
+    <string name="lock_prompt_subtitle">Use your fingerprint, face or screen lock</string>
+    <string name="lock_confirm_title">Confirm it\'s you</string>
+    <string name="lock_locked_out">Too many attempts · Wait a moment, then try again.</string>
+    <string name="lock_failed">Couldn\'t check that · Try again.</string>
+    <string name="lock_skipped">App lock skipped · Your phone has no screen lock set up.</string>
 </resources>

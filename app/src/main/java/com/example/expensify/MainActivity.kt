@@ -4,18 +4,19 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.expensify.core.date.Today
 import com.example.expensify.core.device.DeviceState
 import com.example.expensify.core.ui.AppVisibility
 import com.example.expensify.designsystem.theme.ExpensifyTheme
 import com.example.expensify.feature.auth.domain.ThemePref
+import com.example.expensify.feature.auth.lock.AppLock
 import com.example.expensify.feature.notifications.AlertNavigator
 import com.example.expensify.feature.notifications.domain.AlertLinks
 import com.example.expensify.navigation.AppRoot
@@ -25,7 +26,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+// A FragmentActivity, not a ComponentActivity: the app lock's BiometricPrompt needs one.
+class MainActivity : FragmentActivity() {
     @Inject
     lateinit var today: Today
 
@@ -37,6 +39,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var alertNavigator: AlertNavigator
+
+    @Inject
+    lateinit var appLock: AppLock
 
     private val localNetworkPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* the next Firebase call just works, or not */ }
@@ -70,11 +75,14 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStart() {
+        // Before the lifecycle reports the start, so the first frame is already behind the lock when it engages.
+        appLock.onStart()
         super.onStart()
         visibility.onStart()
     }
 
     override fun onStop() {
+        appLock.onStop()
         visibility.onStop()
         super.onStop()
     }
