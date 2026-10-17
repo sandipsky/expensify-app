@@ -1,0 +1,6 @@
+# Shell scripts and the Gradle wrapper must keep LF endings, or Linux refuses to run them after a
+# checkout on Windows (core.autocrlf would give them CRLF). Batch files stay CRLF for cmd.exe.
+*.sh     text eol=lf
+gradlew  text eol=lf
+*.bat    text eol=crlf
+*.cmd    text eol=crlf

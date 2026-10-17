@@ -3,14 +3,14 @@
      network addresses unless they hold this runtime permission, and the Firebase
      emulators live at 10.0.2.2 as the Android emulator sees the host machine.
      MainActivity asks for it once when USE_EMULATORS is on; or grant it from a
-     terminal: adb shell pm grant com.example.expensify android.permission.ACCESS_LOCAL_NETWORK
+     terminal: adb shell pm grant com.sandipshakya.expensify.debug android.permission.ACCESS_LOCAL_NETWORK
      Release builds talk to Firebase on the internet and never need it. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <application>
         <!-- A terminal hook to run the recurring catch-up worker once without opening the app:
-             adb shell am broadcast -n com.example.expensify/.feature.recurring.work.DebugCatchUpReceiver -->
+             adb shell am broadcast -n com.sandipshakya.expensify.debug/com.example.expensify.feature.recurring.work.DebugCatchUpReceiver -->
         <receiver
             android:name=".feature.recurring.work.DebugCatchUpReceiver"
             android:exported="true" />

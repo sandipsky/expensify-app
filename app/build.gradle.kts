@@ -1,9 +1,19 @@
+import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
+}
+
+// Release signing: keystore.properties at the repo root (git-ignored) names the keystore and its
+// passwords. Without it a release build compiles but comes out unsigned, so it can't be installed.
+val keystoreProperties: Properties? = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { file ->
+    Properties().also { props -> file.inputStream().use(props::load) }
 }
 
 android {
@@ -13,7 +23,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.expensify"
+        // The id the app is registered under in Firebase (project expensify-13477) and will ship under
+        // on Play. The Kotlin packages keep the namespace above; renaming them is a separate change.
+        applicationId = "com.sandipshakya.expensify"
         // java.time without desugaring; Android 8.0 and up.
         minSdk = 26
         targetSdk = 37
@@ -23,8 +35,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        keystoreProperties?.let { props ->
+            create("release") {
+                storeFile = rootProject.file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
+            // Installs beside the release app, so a release install never replaces the dev one.
+            applicationIdSuffix = ".debug"
             // Debug builds talk to the Firebase emulators started from ../expensify
             // (`npm run emulators`) unless built with -PuseEmulators=false.
             buildConfigField(
@@ -35,9 +60,11 @@ android {
         }
         release {
             buildConfigField("boolean", "USE_EMULATORS", "false")
+            // R8 shrinks and obfuscates; project rules live in src/main/keepRules (the AGP 9 location).
             optimization {
-                enable = false
+                enable = true
             }
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {
@@ -48,6 +75,13 @@ android {
         compose = true
         buildConfig = true
     }
+}
+
+// Only the release build has a google-services.json (app/src/release/, git-ignored, from
+// `firebase apps:sdkconfig ANDROID`). Debug initialises Firebase by hand for the emulators' demo
+// project (ExpensifyApp), so the file is expected to be missing there.
+googleServices {
+    missingGoogleServicesStrategy = MissingGoogleServicesStrategy.IGNORE
 }
 
 dependencies {

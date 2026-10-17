@@ -90,9 +90,20 @@ AVD. `icon.png` (512 px, violet receipt) is the source art for the launcher icon
 were generated from it with `java tools/IconGen.java icon.png app/src/main/res`; rerun that rather than
 editing them if the art changes.
 
-Open decision to settle before registering the app in Firebase: the `applicationId` is still
-`com.example.expensify`. It is baked into `google-services.json` and permanent on Play, so pick
-the real one first (namespace and packages follow it).
+The `applicationId` is settled (16 October 2026): **`com.sandipshakya.expensify`**, with debug builds
+at `com.sandipshakya.expensify.debug` so a release install never replaces the dev one. It is registered
+in the real Firebase project `expensify-13477` as the Android app "Expensify Android"; its config is
+`app/src/release/google-services.json` (git-ignored; refetch with `firebase apps:sdkconfig ANDROID
+<appId> --project expensify-13477 -o app/src/release/google-services.json`, where `firebase apps:list
+--project expensify-13477` prints the app id). The namespace and the Kotlin packages are still
+`com.example.expensify`; renaming them is a separate, mechanical change. Release builds are signed with
+`app/release.keystore` through `keystore.properties` at the repo root (both git-ignored; **back them up**,
+a phone only accepts an update signed with the same key, so a lost keystore means uninstall and reinstall)
+and R8 is on. The signed release APK was installed on `Pixel_10` and reached the real project (a wrong login
+was refused with the right sentence). The app is **not going to Play** (17 October 2026): it is installed on
+the user's own phone from `dist/` by `build-release.ps1` (Windows; `build-release.cmd` wraps it for cmd.exe or a
+locked execution policy) or `build-release.sh` (Linux), which run the preflight checks, `assembleRelease`, and
+with `-Install` / `--install` push the APK over adb.
 
 ## Toolchain and build
 
@@ -104,7 +115,7 @@ the real one first (namespace and packages follow it).
 | Compose | BOM 2026.02.01, Material 3 | Compose compiler via `org.jetbrains.kotlin.plugin.compose` |
 | SDK | minSdk 24, target/compile 37 | Installed locally: platform `android-37`, build-tools 36.0.0 |
 | Java target | 11 | |
-| Release | `optimization { enable = false }` | Turn R8 on before any release; keep rules go in `app/src/main/keepRules/` (AGP 9 location), not `proguard-rules.pro` |
+| Release | `optimization { enable = true }`, signed from `keystore.properties` | R8 on; keep rules go in `app/src/main/keepRules/` (AGP 9 location), not `proguard-rules.pro`. Libraries ship their own consumer rules; the project file is still empty |
 | KSP on AGP 9 | `android.disallowKotlinSourceSets=false` in `gradle.properties` | KSP 2.2.10-2.0.2 still registers its generated sources through `kotlin.sourceSets`, which built-in Kotlin forbids; the flag is the documented escape hatch. Remove it once a KSP release stops needing it |
 | Firebase BOM | **34.x** (34.19.0), not 35 | BOM 35's `firebase-auth` 25.0.0 ships Kotlin 2.4 metadata, which the 2.2.10 compiler refuses as a hard error whenever the jar is on the classpath. Bump the BOM only together with Kotlin ≥ 2.4 (and KSP, Compose and serialization plugins) |
 | Firebase entry points | `FirebaseAuth.getInstance()`, `FirebaseFirestore.getInstance()` | The Java API; `Firebase.auth` is one of the Kotlin extensions in that jar. `Query.snapshots()` from `firebase-firestore` is fine |
@@ -118,6 +129,8 @@ Every dependency goes through `gradle/libs.versions.toml`; never a literal coord
 .\gradlew.bat lint                       # Android lint
 .\gradlew.bat installDebug               # onto the running emulator or device
 .\gradlew.bat connectedDebugAndroidTest  # Compose UI tests; needs an emulator running
+.\gradlew.bat assembleRelease           # signed, R8-shrunk APK; needs keystore.properties and app/src/release/google-services.json
+.\build-release.ps1 [-Install]          # preflight + assembleRelease, APK copied to dist/; -Install pushes it to the phone over adb (./build-release.sh --install on Linux)
 ```
 
 Local machine: SDK at `$env:LOCALAPPDATA\Android\Sdk`; `adb` and `emulator` are **not on PATH**,
@@ -126,6 +139,8 @@ call them by full path. One AVD exists, `Pixel_10`:
 ```powershell
 & "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_10
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices
+# Debug builds install as com.sandipshakya.expensify.debug; the classes keep the com.example.expensify namespace:
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am start -n com.sandipshakya.expensify.debug/com.example.expensify.MainActivity
 # Verify UI work by looking at it: screenshot into the scratchpad and Read the PNG.
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" exec-out screencap -p > "<scratchpad>\screen.png"
 ```
@@ -155,7 +170,7 @@ Exports (Excel, PDF) and App Check (Play Integrity) come last; don't start them 
 ## Package layout
 
 ```
-com.example.expensify            (rename with the applicationId)
+com.example.expensify            (the namespace; the applicationId is com.sandipshakya.expensify)
 ├── ExpensifyApp.kt              @HiltAndroidApp
 ├── MainActivity.kt              enableEdgeToEdge(); setContent { ExpensifyTheme { AppNavHost() } }
 ├── core/
@@ -216,8 +231,11 @@ The full model is requirements §8/§9. These are the places an Android port goe
 
 ### Firebase wiring
 
-- `app/google-services.json` from the console (Android app registered under the final
-  `applicationId`), git-ignored. The web config's `VITE_*` values are not used here.
+- `app/src/release/google-services.json` is the Android app's config from the real project (see
+  "State of the repo" for how to refetch it), git-ignored. It lives in the release source set only;
+  the `com.google.gms.google-services` plugin runs with `missingGoogleServicesStrategy = IGNORE`, so
+  debug builds have no json and keep the hand-made emulator init. The web config's `VITE_*` values
+  are not used here: an Android app needs its own registration, not the web app's id.
 - Emulators run from the web repo: `cd ../expensify; npm run emulators` (Auth 9099, Firestore
   8080, UI on http://localhost:4000, project `demo-expensify`). From an AVD the host is
   `10.0.2.2`: `FirebaseAuth.getInstance().useEmulator("10.0.2.2", 9099)` and
@@ -234,15 +252,17 @@ The full model is requirements §8/§9. These are the places an Android port goe
   `android.permission.ACCESS_LOCAL_NETWORK`; connections just sit in `SYN_SENT` and Firestore
   reports "Backend didn't respond within 10 seconds". `src/debug/AndroidManifest.xml` declares
   it and `MainActivity` asks for it once when `USE_EMULATORS` is on; for scripted runs grant it
-  with `adb shell pm grant com.example.expensify android.permission.ACCESS_LOCAL_NETWORK`. Release
+  with `adb shell pm grant com.sandipshakya.expensify.debug android.permission.ACCESS_LOCAL_NETWORK`. Release
   builds never need it. `adb shell` is exempt, so `nc` from the shell proves nothing about the app.
 - The recurring catch-up also runs as a daily WorkManager job while the app is closed. Its first
   window opens ~23 h after sign-in and WorkManager refuses to run a periodic job early, so to check
-  the closed-app path kill the app in the background (`adb shell am kill com.example.expensify`, never
-  `force-stop`, which drops the jobs) and run the debug-only hook:
-  `adb shell am broadcast -n com.example.expensify/.feature.recurring.work.DebugCatchUpReceiver`.
-- No `google-services.json` yet: `ExpensifyApp` initialises Firebase by hand for the demo project
-  in debug builds, and there is no Firebase config for release until the app is registered.
+  the closed-app path kill the app in the background (`adb shell am kill com.sandipshakya.expensify.debug`,
+  never `force-stop`, which drops the jobs) and run the debug-only hook:
+  `adb shell am broadcast -n com.sandipshakya.expensify.debug/com.example.expensify.feature.recurring.work.DebugCatchUpReceiver`.
+- `ExpensifyApp` initialises Firebase by hand for the demo project in debug builds (no json there);
+  release builds get the default `FirebaseApp` from `google-services.json` and never touch the emulators.
+- A debug build with `-PuseEmulators=false` has neither json nor emulator init and would crash on the
+  first Firebase call; use the release build to talk to the real project.
 
 ## Design system
 

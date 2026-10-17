@@ -14,6 +14,8 @@ hilt = "2.60.1"
 hiltNavigationCompose = "1.4.0"
 navigationCompose = "2.10.2"
 firebaseBom = "34.19.0"
+# Reads app/src/release/google-services.json into the release build; debug has none and keeps the emulator init.
+googleServices = "4.5.0"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 # No longer in the Compose BOM; the last published version, binary-compatible with current Compose.
@@ -61,6 +63,7 @@ truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
