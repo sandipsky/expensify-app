@@ -71,10 +71,18 @@ built (phase 4), so the report cards don't mention it. **Settings** is built: pr
 password, theme (applied at once and cached in DataStore for the first frame), the notification
 switches with the reminder time and the phone's notification permission, delete all transactions
 with the count, and delete account with typed DELETE + password, and a **Security** section
-(17 October 2026) with the app lock: `feature/auth/lock/` keeps the signed-in shell behind the
-phone's fingerprint, face or screen lock (`androidx.biometric`, `BIOMETRIC_WEAK | DEVICE_CREDENTIAL`)
-when the app opens and when it comes back after a minute away; the switch is device-local in
-DataStore keyed to the uid, the Firebase session is untouched, and `MainActivity` is a
+(17–18 October 2026) with the app lock: `feature/auth/lock/` keeps the signed-in shell behind the
+user's own 4-digit **MPIN** or the phone's fingerprint or face (`androidx.biometric`, `BIOMETRIC_WEAK`
+only: the phone's PIN, pattern or password is never offered) when the app opens and when it comes
+back after a minute away. Turning it on means choosing the MPIN twice on the pushed `Routes.AppLockPin`
+screen; changing it or turning it off means proving the current MPIN or a biometric there first. The
+lock screen is its own keypad (`PinPad`), the biometric prompt shows by itself when one is enrolled,
+five wrong MPINs are free and then a 30 s wait doubles up to 5 min (`LockRules`, kept in DataStore so
+a restart doesn't reset it), and "Forgot your MPIN? Log out" drops the lock so the account password is
+the recovery. The switch, the MPIN's salted PBKDF2 verifier (`MpinRules`, never the digits) and the
+wrong-try count are device-local in DataStore keyed to the uid; the lock only counts as on while both
+the uid and the verifier are there, so a lock turned on by the earlier device-credential build shows
+as off until it is set up again. The Firebase session is untouched, and `MainActivity` is a
 `FragmentActivity` for the prompt; `AuthRepository` now has the
 web's `updateProfile`/`updatePreferences`/`changeEmail`/`changePassword`/`deleteAccount` and the
 profile-load repairs (`syncLogin`). The **Dashboard** is built (`feature/dashboard/`): the period

@@ -10,14 +10,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,13 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -42,56 +40,46 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.withResumed
 import com.example.expensify.R
-import com.example.expensify.core.ui.UiText
 import com.example.expensify.core.ui.plain
 import com.example.expensify.designsystem.components.IconBadge
 import com.example.expensify.designsystem.icons.AppIcons
 import com.example.expensify.designsystem.theme.ExpensifyTheme
-import kotlinx.coroutines.launch
 
 /**
  * The lock screen over the signed-in shell (Settings › Security). It is its
  * own window, so it also covers a sheet or dialog that was open when the app
  * was put away, and the shell underneath keeps its state for when it opens
- * again. The phone's prompt shows as soon as the lock engages; a cancelled
- * prompt waits for the Unlock button. Back puts the app away instead of
- * reaching the shell.
+ * again. The MPIN keypad is always there; where the phone has a fingerprint
+ * or face, its prompt shows as soon as the lock engages and again from the
+ * keypad's fingerprint key. Back puts the app away instead of reaching the
+ * shell.
  */
 @Composable
 fun LockRoute(viewModel: LockViewModel = hiltViewModel()) {
-    val note by viewModel.note.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val generation by viewModel.generation.collectAsStateWithLifecycle()
-    val activity = LocalActivity.current as? FragmentActivity
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val scope = rememberCoroutineScope()
-    val title = stringResource(R.string.lock_prompt_title)
-    val subtitle = stringResource(R.string.lock_prompt_subtitle)
-    var inFlight by remember { mutableStateOf(false) }
+    val activity = LocalActivity.current
+    val haptics = LocalHapticFeedback.current
+    // Read once per lock: enrolling a fingerprint means leaving the app, which engages the lock again.
+    val biometrics = remember(generation) { viewModel.biometrics.availability() == Biometrics.Availability.Available }
+    val askBiometric = rememberBiometricAsk(
+        biometrics = viewModel.biometrics,
+        auto = biometrics,
+        autoKey = generation,
+        title = stringResource(R.string.lock_prompt_title),
+        subtitle = stringResource(R.string.lock_prompt_subtitle),
+        onOutcome = viewModel::biometricFinished,
+    )
 
-    suspend fun ask() {
-        if (activity == null || inFlight) return
-        inFlight = true
-        try {
-            if (viewModel.biometrics.availability() == Biometrics.Availability.NoScreenLock) {
-                viewModel.skip()
-            } else {
-                viewModel.finished(viewModel.biometrics.authenticate(activity, title, subtitle))
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                LockEvent.Wrong -> haptics.performHapticFeedback(HapticFeedbackType.Reject)
             }
-        } finally {
-            inFlight = false
         }
-    }
-
-    // Once each time the lock engages, as soon as the activity is on screen (the prompt needs it to be).
-    LaunchedEffect(generation) {
-        lifecycle.withResumed { }
-        ask()
     }
 
     Dialog(
@@ -111,55 +99,79 @@ fun LockRoute(viewModel: LockViewModel = hiltViewModel()) {
                 }
             }
         }
-        LockScreen(note = note, onUnlock = { scope.launch { ask() } }, onLogout = viewModel::logout)
+        LockScreen(
+            state = state,
+            biometrics = biometrics,
+            onDigit = viewModel::onDigit,
+            onBackspace = viewModel::onBackspace,
+            onBiometric = askBiometric,
+            onForgot = viewModel::forgot,
+        )
     }
 }
 
 @Composable
-fun LockScreen(note: UiText?, onUnlock: () -> Unit, onLogout: () -> Unit) {
+fun LockScreen(
+    state: LockUiState,
+    biometrics: Boolean,
+    onDigit: (Char) -> Unit,
+    onBackspace: () -> Unit,
+    onBiometric: () -> Unit,
+    onForgot: () -> Unit,
+) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Box(
+        Column(
             Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing),
-            contentAlignment = Alignment.Center,
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 420.dp)
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                IconBadge(icon = AppIcons.Lock, color = MaterialTheme.colorScheme.primary, size = 64.dp)
-                Text(
-                    stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
-                Text(
-                    stringResource(R.string.lock_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(8.dp))
-                Button(onClick = onUnlock, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    Icon(AppIcons.Fingerprint, contentDescription = null, Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.lock_unlock))
-                }
-                if (note != null) {
+            // What this is and how it is going, centred in whatever room the keypad leaves.
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Column(
+                    Modifier
+                        .widthIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    IconBadge(icon = AppIcons.Lock, color = MaterialTheme.colorScheme.primary, size = 64.dp)
                     Text(
-                        note.asString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                    Text(
+                        stringResource(if (biometrics) R.string.lock_subtitle_biometrics else R.string.lock_subtitle_pin),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
+                    Spacer(Modifier.height(12.dp))
+                    PinDots(filled = state.entered.length, error = state.note != null)
+                    // Room kept for the note, so the dots and keypad never jump when it comes and goes.
+                    Box(Modifier.heightIn(min = 40.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        if (state.note != null) {
+                            Text(
+                                state.note.asString(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
                 }
-                TextButton(onClick = onLogout) { Text(stringResource(R.string.more_log_out)) }
             }
+            PinPad(
+                onDigit = onDigit,
+                onBackspace = onBackspace,
+                onBiometric = if (biometrics) onBiometric else null,
+                enabled = state.padOpen,
+            )
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = onForgot) { Text(stringResource(R.string.lock_forgot)) }
         }
     }
 }
@@ -168,6 +180,22 @@ fun LockScreen(note: UiText?, onUnlock: () -> Unit, onLogout: () -> Unit) {
 @Composable
 private fun LockScreenPreview() {
     ExpensifyTheme {
-        LockScreen(note = plain("Too many attempts · Wait a moment, then try again."), onUnlock = {}, onLogout = {})
+        LockScreen(
+            state = LockUiState(entered = "48", note = plain("Wrong MPIN · 3 tries left")),
+            biometrics = true,
+            onDigit = {}, onBackspace = {}, onBiometric = {}, onForgot = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun LockScreenWaitingPreview() {
+    ExpensifyTheme {
+        LockScreen(
+            state = LockUiState(waitSeconds = 27, note = plain("Too many wrong tries · Try again in 0:27")),
+            biometrics = false,
+            onDigit = {}, onBackspace = {}, onBiometric = {}, onForgot = {},
+        )
     }
 }

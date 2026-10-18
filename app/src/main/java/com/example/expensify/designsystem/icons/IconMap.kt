@@ -48,6 +48,7 @@ import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.rounded.LocalGasStation
 import androidx.compose.material.icons.rounded.LocalHospital
 import androidx.compose.material.icons.rounded.LocalShipping
@@ -151,6 +152,7 @@ object AppIcons {
     val Notifications = Icons.Rounded.Notifications
     val Lock = Icons.Rounded.Lock
     val Fingerprint = Icons.Rounded.Fingerprint
+    val Backspace = Icons.AutoMirrored.Rounded.Backspace
     val Photo = Icons.Rounded.Image
     val Person = Icons.Rounded.Person
     val Palette = Icons.Rounded.Palette

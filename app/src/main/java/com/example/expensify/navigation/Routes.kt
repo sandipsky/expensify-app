@@ -164,6 +164,10 @@ object Routes {
     @Serializable
     data object ChangePassword
 
+    /** Settings › Security: `purpose` is an `AppLockPinPurpose` ("on", "change" or "off"). */
+    @Serializable
+    data class AppLockPin(val purpose: String)
+
     @Serializable
     data object DeleteAccount
 }

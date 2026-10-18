@@ -55,6 +55,7 @@ import com.example.expensify.feature.reports.ui.CategoryTrendsRoute
 import com.example.expensify.feature.reports.ui.DrillDown
 import com.example.expensify.feature.reports.ui.IdsParam
 import com.example.expensify.feature.reports.ui.ReportsScreen
+import com.example.expensify.feature.auth.lock.AppLockPinRoute
 import com.example.expensify.feature.settings.ui.ChangePasswordRoute
 import com.example.expensify.feature.settings.ui.DeleteAccountRoute
 import com.example.expensify.feature.settings.ui.MoreRoute
@@ -332,6 +333,7 @@ fun MainNavHost(snackbarHost: SnackbarHostState, alertRequests: Flow<AlertTarget
                     onBack = back,
                     onEditProfile = { navController.navigate(Routes.ProfileForm) },
                     onChangePassword = { navController.navigate(Routes.ChangePassword) },
+                    onAppLockPin = { navController.navigate(Routes.AppLockPin(it.stored)) },
                     onDeleteAccount = { navController.navigate(Routes.DeleteAccount) },
                 )
             }
@@ -340,6 +342,9 @@ fun MainNavHost(snackbarHost: SnackbarHostState, alertRequests: Flow<AlertTarget
             }
             composable<Routes.ChangePassword> {
                 ChangePasswordRoute(onDone = back)
+            }
+            composable<Routes.AppLockPin> {
+                AppLockPinRoute(onDone = back)
             }
             composable<Routes.DeleteAccount> {
                 DeleteAccountRoute(onClose = back)

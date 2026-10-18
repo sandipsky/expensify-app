@@ -972,21 +972,43 @@
     <string name="channel_daily_reminder">Daily reminder</string>
     <string name="channel_daily_reminder_description">A reminder to log your spending at the time you choose.</string>
 
-    <!-- App lock (Settings › Security, feature/auth/lock): no web counterpart -->
+    <!-- App lock (Settings › Security, feature/auth/lock): no web counterpart. The user's own MPIN,
+         or the phone's fingerprint or face; never the phone's PIN or password. -->
     <string name="settings_section_security">Security</string>
-    <string name="settings_app_lock">Lock with fingerprint or face</string>
-    <string name="settings_app_lock_hint">Asks for your fingerprint, face or screen lock when Expensify opens, and when you come back to it after a minute away.</string>
-    <string name="settings_app_lock_unavailable">Set up a fingerprint, face or screen lock in your phone\'s settings first.</string>
+    <string name="settings_app_lock">App lock</string>
+    <string name="settings_app_lock_hint">Asks for your MPIN, or your fingerprint or face, when Expensify opens and when you come back to it after a minute away.</string>
+    <string name="settings_app_lock_biometrics_missing">To unlock with a fingerprint or face as well, set one up in your phone\'s settings.</string>
+    <string name="settings_app_lock_change_pin">Change MPIN</string>
     <string name="settings_app_lock_on">App lock on</string>
     <string name="settings_app_lock_off">App lock off</string>
-    <string name="settings_app_lock_not_changed">App lock not changed · Confirm it\'s you to change it.</string>
+    <string name="settings_app_lock_pin_changed">MPIN changed</string>
     <string name="lock_title">Expensify is locked</string>
-    <string name="lock_subtitle">Unlock with your fingerprint, face or screen lock to see your money.</string>
-    <string name="lock_unlock">Unlock</string>
+    <string name="lock_subtitle_pin">Enter your MPIN to see your money.</string>
+    <string name="lock_subtitle_biometrics">Enter your MPIN, or use your fingerprint or face, to see your money.</string>
+    <string name="lock_use_biometrics">Use fingerprint or face</string>
+    <string name="lock_backspace">Delete last digit</string>
+    <string name="lock_dots_entered">%1$d of %2$d digits entered</string>
     <string name="lock_prompt_title">Unlock Expensify</string>
-    <string name="lock_prompt_subtitle">Use your fingerprint, face or screen lock</string>
+    <string name="lock_prompt_subtitle">Use your fingerprint or face</string>
+    <string name="lock_prompt_use_pin">Use MPIN</string>
     <string name="lock_confirm_title">Confirm it\'s you</string>
-    <string name="lock_locked_out">Too many attempts · Wait a moment, then try again.</string>
-    <string name="lock_failed">Couldn\'t check that · Try again.</string>
-    <string name="lock_skipped">App lock skipped · Your phone has no screen lock set up.</string>
+    <plurals name="lock_wrong_pin">
+        <item quantity="one">Wrong MPIN · 1 try left</item>
+        <item quantity="other">Wrong MPIN · %d tries left</item>
+    </plurals>
+    <string name="lock_wait">Too many wrong tries · Try again in %1$s</string>
+    <string name="lock_biometrics_locked_out">Fingerprint or face locked for now · Use your MPIN.</string>
+    <string name="lock_biometrics_failed">Couldn\'t check that · Use your MPIN.</string>
+    <string name="lock_forgot">Forgot your MPIN? Log out</string>
+    <string name="lock_forgot_done">App lock off · Log in again, then set a new MPIN in Settings.</string>
+    <string name="pin_title_on">Set MPIN</string>
+    <string name="pin_title_change">Change MPIN</string>
+    <string name="pin_title_off">Turn off app lock</string>
+    <string name="pin_step_verify">Enter your current MPIN</string>
+    <string name="pin_step_verify_hint_biometrics">Or use your fingerprint or face.</string>
+    <string name="pin_step_enter">Choose a %d-digit MPIN</string>
+    <string name="pin_step_enter_hint">You\'ll enter it when Expensify opens. Pick one you don\'t use anywhere else.</string>
+    <string name="pin_step_confirm">Enter it again</string>
+    <string name="pin_step_confirm_hint">So a slip of the finger can\'t lock you out.</string>
+    <string name="pin_mismatch">They didn\'t match · Choose your MPIN again.</string>
 </resources>

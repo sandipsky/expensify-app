@@ -3,7 +3,6 @@ package com.example.expensify.feature.auth.lock
 import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
-import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -14,42 +13,48 @@ import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
- * The phone's own check of who is holding it, through the system
- * `BiometricPrompt`: a fingerprint or face where the phone has one, and its
- * PIN, pattern or password otherwise or as the fallback the prompt offers.
- * Nothing is stored here; the app lock only needs a yes.
+ * The phone's fingerprint or face check, through the system `BiometricPrompt`.
+ * Biometrics only: the phone's PIN, pattern or password is never offered, the
+ * app lock's own MPIN is the other way in. Nothing is stored here; the lock
+ * only needs a yes.
  */
 @Singleton
 class Biometrics @Inject constructor(@ApplicationContext private val context: Context) {
 
     enum class Availability {
-        /** A fingerprint, face or screen lock is set up. */
+        /** A fingerprint or face is enrolled and the sensor is ready. */
         Available,
 
-        /** The phone has no screen lock at all, so nothing can be checked. */
-        NoScreenLock,
+        /** The phone can take one but none is set up, so only the MPIN can unlock. */
+        NoneEnrolled,
 
-        /** Not right now: no hardware, a sensor that is busy, or a security update pending. The prompt may still work later. */
+        /** No sensor, a sensor that is busy, or a security update pending. The MPIN still works. */
         Unavailable,
     }
 
     sealed interface Outcome {
         data object Success : Outcome
+
+        /** Dismissed, or "Use MPIN" tapped. */
         data object Cancelled : Outcome
 
-        /** Too many wrong tries; the phone refuses for a while. */
+        /** Too many wrong fingers or faces; the phone refuses for a while. */
         data object LockedOut : Outcome
         data object Failed : Outcome
     }
 
     fun availability(): Availability = when (BiometricManager.from(context).canAuthenticate(AUTHENTICATORS)) {
         BiometricManager.BIOMETRIC_SUCCESS -> Availability.Available
-        BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> Availability.NoScreenLock
+        BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> Availability.NoneEnrolled
         else -> Availability.Unavailable
     }
 
-    /** Shows the prompt and waits for its answer. Leaving the coroutine dismisses it. */
-    suspend fun authenticate(activity: FragmentActivity, title: String, subtitle: String?): Outcome =
+    /**
+     * Shows the prompt and waits for its answer. [negativeText] is the prompt's
+     * other button ("Use MPIN"), which the system requires when the phone's
+     * credential is not an option. Leaving the coroutine dismisses it.
+     */
+    suspend fun authenticate(activity: FragmentActivity, title: String, subtitle: String?, negativeText: String): Outcome =
         suspendCancellableCoroutine { continuation ->
             val callback = object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
@@ -72,6 +77,7 @@ class Biometrics @Inject constructor(@ApplicationContext private val context: Co
             val info = BiometricPrompt.PromptInfo.Builder()
                 .setTitle(title)
                 .apply { if (subtitle != null) setSubtitle(subtitle) }
+                .setNegativeButtonText(negativeText)
                 .setAllowedAuthenticators(AUTHENTICATORS)
                 .setConfirmationRequired(false)
                 .build()
@@ -81,10 +87,11 @@ class Biometrics @Inject constructor(@ApplicationContext private val context: Co
 
     private companion object {
         /**
-         * Any biometric the phone trusts for its own unlock, with the screen lock as the fallback.
-         * Weak (class 2) face unlock counts: there is no key to protect, only a gate to pass, and
-         * this pairing is the one the library supports on every Android version from 7 up.
+         * Any biometric the phone trusts for its own unlock, and nothing else:
+         * no `DEVICE_CREDENTIAL`, so the phone's PIN, pattern or password never
+         * opens the app. Weak (class 2) face unlock counts: there is no key to
+         * protect, only a gate to pass.
          */
-        const val AUTHENTICATORS = BIOMETRIC_WEAK or DEVICE_CREDENTIAL
+        const val AUTHENTICATORS = BIOMETRIC_WEAK
     }
 }

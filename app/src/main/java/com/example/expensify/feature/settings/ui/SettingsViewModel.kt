@@ -59,8 +59,8 @@ class SettingsViewModel @Inject constructor(
     private val transactions: TransactionRepository,
     private val messages: Messages,
     private val thumbnails: PhotoThumbnails,
-    private val appLock: AppLock,
-    /** For the screen to run the phone's prompt; it holds no activity. */
+    appLock: AppLock,
+    /** For the screen to say whether a fingerprint or face is enrolled; the lock itself is changed on the MPIN screen. */
     val biometrics: Biometrics,
 ) : ViewModel() {
 
@@ -98,18 +98,6 @@ class SettingsViewModel @Inject constructor(
     fun setBudgetAlerts(on: Boolean) = save(PreferencesPatch(budgetAlerts = on), R.string.settings_could_not_save)
 
     fun setBillReminders(on: Boolean) = save(PreferencesPatch(billReminders = on), R.string.settings_could_not_save)
-
-    // Security: the app lock, kept on this phone (feature/auth/lock). The phone has just confirmed it is them.
-
-    fun setAppLock(on: Boolean) {
-        viewModelScope.launch {
-            appLock.setEnabled(on)
-            messages.show(res(if (on) R.string.settings_app_lock_on else R.string.settings_app_lock_off))
-        }
-    }
-
-    /** The prompt was cancelled or did not pass: the switch stays as it was. */
-    fun appLockNotChanged() = messages.show(res(R.string.settings_app_lock_not_changed))
 
     /** What the system answered when asked to allow notifications. */
     fun notifyPermission(granted: Boolean) {
